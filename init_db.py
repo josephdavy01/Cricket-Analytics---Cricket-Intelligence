@@ -21,6 +21,8 @@ if "+asyncpg" in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.replace("+asyncpg", "")
 
 SQL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cricket_analytics.sql")
+if not os.path.exists(SQL_FILE):
+    SQL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.sql")
 
 
 def run_init():
@@ -30,9 +32,19 @@ def run_init():
 
     print(f"Connecting to database...")
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        connect_kwargs = {}
+        if "sslmode=require" in DATABASE_URL:
+            clean_url = DATABASE_URL.replace("?sslmode=require", "").replace("&sslmode=require", "")
+            connect_kwargs["sslmode"] = "require"
+            conn = psycopg2.connect(clean_url, **connect_kwargs)
+        elif "render.com" in DATABASE_URL:
+            connect_kwargs["sslmode"] = "require"
+            conn = psycopg2.connect(DATABASE_URL, **connect_kwargs)
+        else:
+            conn = psycopg2.connect(DATABASE_URL)
         conn.autocommit = True
         cur = conn.cursor()
+
 
         print(f"Reading SQL script from {SQL_FILE}...")
         with open(SQL_FILE, "r", encoding="utf-8") as f:
