@@ -1,15 +1,17 @@
 """
-step3.py  Full Data Import Pipeline
-=====================================
-Runs all three import steps in order using a single DB connection:
+step3.py  Full Fast Batch Data Import Pipeline
+===============================================
+Runs all three import steps in order using fast bulk inserts (execute_values):
   1. Players     (from cricket_squad_detailed.json)
   2. Matches     (from t20s_json/*.json)
-  3. Deliveries  (from t20s_json/*.json, depends on matches being imported first)
+  3. Deliveries  (from t20s_json/*.json)
 """
 
-import json
 import os
+import sys
+import json
 import psycopg2
+from psycopg2.extras import execute_values
 
 # --- Config -------------------------------------------------------------------
 
@@ -21,7 +23,6 @@ if not os.path.exists(PLAYER_JSON):
     PLAYER_JSON = os.path.join(BASE_DIR, "cricket_data_engineering", "Data", "cricket_squad_detailed.json")
 if not os.path.exists(PLAYER_JSON):
     PLAYER_JSON = os.path.join(BASE_DIR, "Data", "cricket_squad_detailed.json")
-
 
 DB_CONFIG = dict(
     host="localhost",
@@ -63,62 +64,18 @@ def get_phase(over_number):
 # --- Step 1: Import Players ---------------------------------------------------
 
 def import_players(cursor, conn):
-    print("\n" + "=" * 60)
-    print("STEP 1: Importing Players")
-    print("=" * 60)
+    print("\n" + "=" * 60, flush=True)
+    print("STEP 1: Importing Players (Fast Bulk Insert)...", flush=True)
+    print("=" * 60, flush=True)
 
     if not os.path.exists(PLAYER_JSON):
-        print(f"  [SKIP] Player JSON not found: {PLAYER_JSON}")
+        print(f"  [SKIP] Player JSON not found: {PLAYER_JSON}", flush=True)
         return
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS players (
-            player_id       SERIAL PRIMARY KEY,
-            name            VARCHAR(255),
-            team            VARCHAR(255),
-            profile_url     TEXT,
-            image_url       TEXT,
-            role            VARCHAR(100),
-            batting_style   VARCHAR(100),
-            bowling_style   VARCHAR(100),
-            batting_matches INT,
-            batting_innings INT,
-            batting_not_out INT,
-            batting_runs    INT,
-            batting_highest VARCHAR(50),
-            batting_average NUMERIC,
-            batting_balls   INT,
-            batting_strike_rate NUMERIC,
-            batting_100s    INT,
-            batting_50s     INT,
-            batting_4s      INT,
-            batting_6s      INT,
-            catches         INT,
-            stumpings       INT,
-            bowling_matches INT,
-            bowling_innings INT,
-            bowling_balls   INT,
-            bowling_runs    INT,
-            bowling_wickets INT,
-            bowling_bbi     VARCHAR(50),
-            bowling_bbm     VARCHAR(50),
-            bowling_average NUMERIC,
-            bowling_economy NUMERIC,
-            bowling_strike_rate NUMERIC,
-            bowling_4w      INT,
-            bowling_5w      INT,
-            bowling_10w     INT,
-            UNIQUE (name, team)
-        );
-        ALTER TABLE players ADD COLUMN IF NOT EXISTS player_id SERIAL;
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_players_player_id ON players (player_id);
-    """)
-    conn.commit()
 
     with open(PLAYER_JSON, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    count = 0
+    player_records = []
     for team, players in data.items():
         for player in players:
             name        = player.get("name")
@@ -128,57 +85,7 @@ def import_players(cursor, conn):
             batting     = player.get("batting_career_stats", {})
             bowling     = player.get("bowling_career_stats", {})
 
-            cursor.execute("""
-                INSERT INTO players (
-                    name, team, profile_url, image_url,
-                    role, batting_style, bowling_style,
-                    batting_matches, batting_innings, batting_not_out, batting_runs,
-                    batting_highest, batting_average, batting_balls, batting_strike_rate,
-                    batting_100s, batting_50s, batting_4s, batting_6s,
-                    catches, stumpings,
-                    bowling_matches, bowling_innings, bowling_balls, bowling_runs,
-                    bowling_wickets, bowling_bbi, bowling_bbm, bowling_average,
-                    bowling_economy, bowling_strike_rate, bowling_4w, bowling_5w, bowling_10w
-                )
-                VALUES (
-                    %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                )
-                ON CONFLICT (name, team) DO UPDATE SET
-                    profile_url         = EXCLUDED.profile_url,
-                    image_url           = EXCLUDED.image_url,
-                    role                = EXCLUDED.role,
-                    batting_style       = EXCLUDED.batting_style,
-                    bowling_style       = EXCLUDED.bowling_style,
-                    batting_matches     = EXCLUDED.batting_matches,
-                    batting_innings     = EXCLUDED.batting_innings,
-                    batting_not_out     = EXCLUDED.batting_not_out,
-                    batting_runs        = EXCLUDED.batting_runs,
-                    batting_highest     = EXCLUDED.batting_highest,
-                    batting_average     = EXCLUDED.batting_average,
-                    batting_balls       = EXCLUDED.batting_balls,
-                    batting_strike_rate = EXCLUDED.batting_strike_rate,
-                    batting_100s        = EXCLUDED.batting_100s,
-                    batting_50s         = EXCLUDED.batting_50s,
-                    batting_4s          = EXCLUDED.batting_4s,
-                    batting_6s          = EXCLUDED.batting_6s,
-                    catches             = EXCLUDED.catches,
-                    stumpings           = EXCLUDED.stumpings,
-                    bowling_matches     = EXCLUDED.bowling_matches,
-                    bowling_innings     = EXCLUDED.bowling_innings,
-                    bowling_balls       = EXCLUDED.bowling_balls,
-                    bowling_runs        = EXCLUDED.bowling_runs,
-                    bowling_wickets     = EXCLUDED.bowling_wickets,
-                    bowling_bbi         = EXCLUDED.bowling_bbi,
-                    bowling_bbm         = EXCLUDED.bowling_bbm,
-                    bowling_average     = EXCLUDED.bowling_average,
-                    bowling_economy     = EXCLUDED.bowling_economy,
-                    bowling_strike_rate = EXCLUDED.bowling_strike_rate,
-                    bowling_4w          = EXCLUDED.bowling_4w,
-                    bowling_5w          = EXCLUDED.bowling_5w,
-                    bowling_10w         = EXCLUDED.bowling_10w
-            """, (
+            player_records.append((
                 name, team, profile_url, image_url,
                 personal.get("Role"), personal.get("Batting Style"), personal.get("Bowling Style"),
                 to_int(batting.get("Mat")), to_int(batting.get("Inns")), to_int(batting.get("NO")),
@@ -194,20 +101,68 @@ def import_players(cursor, conn):
                 to_float(bowling.get("SR")), to_int(bowling.get("4w")),
                 to_int(bowling.get("5w")), to_int(bowling.get("10w")),
             ))
-            count += 1
 
+    insert_query = """
+        INSERT INTO players (
+            name, team, profile_url, image_url,
+            role, batting_style, bowling_style,
+            batting_matches, batting_innings, batting_not_out, batting_runs,
+            batting_highest, batting_average, batting_balls, batting_strike_rate,
+            batting_100s, batting_50s, batting_4s, batting_6s,
+            catches, stumpings,
+            bowling_matches, bowling_innings, bowling_balls, bowling_runs,
+            bowling_wickets, bowling_bbi, bowling_bbm, bowling_average,
+            bowling_economy, bowling_strike_rate, bowling_4w, bowling_5w, bowling_10w
+        )
+        VALUES %s
+        ON CONFLICT (name, team) DO UPDATE SET
+            profile_url         = EXCLUDED.profile_url,
+            image_url           = EXCLUDED.image_url,
+            role                = EXCLUDED.role,
+            batting_style       = EXCLUDED.batting_style,
+            bowling_style       = EXCLUDED.bowling_style,
+            batting_matches     = EXCLUDED.batting_matches,
+            batting_innings     = EXCLUDED.batting_innings,
+            batting_not_out     = EXCLUDED.batting_not_out,
+            batting_runs        = EXCLUDED.batting_runs,
+            batting_highest     = EXCLUDED.batting_highest,
+            batting_average     = EXCLUDED.batting_average,
+            batting_balls       = EXCLUDED.batting_balls,
+            batting_strike_rate = EXCLUDED.batting_strike_rate,
+            batting_100s        = EXCLUDED.batting_100s,
+            batting_50s         = EXCLUDED.batting_50s,
+            batting_4s          = EXCLUDED.batting_4s,
+            batting_6s          = EXCLUDED.batting_6s,
+            catches             = EXCLUDED.catches,
+            stumpings           = EXCLUDED.stumpings,
+            bowling_matches     = EXCLUDED.bowling_matches,
+            bowling_innings     = EXCLUDED.bowling_innings,
+            bowling_balls       = EXCLUDED.bowling_balls,
+            bowling_runs        = EXCLUDED.bowling_runs,
+            bowling_wickets     = EXCLUDED.bowling_wickets,
+            bowling_bbi         = EXCLUDED.bowling_bbi,
+            bowling_bbm         = EXCLUDED.bowling_bbm,
+            bowling_average     = EXCLUDED.bowling_average,
+            bowling_economy     = EXCLUDED.bowling_economy,
+            bowling_strike_rate = EXCLUDED.bowling_strike_rate,
+            bowling_4w          = EXCLUDED.bowling_4w,
+            bowling_5w          = EXCLUDED.bowling_5w,
+            bowling_10w         = EXCLUDED.bowling_10w
+    """
+
+    execute_values(cursor, insert_query, player_records, page_size=200)
     conn.commit()
-    print(f"  -> {count} players imported/updated successfully.")
+    print(f"  -> {len(player_records)} players imported/updated successfully.", flush=True)
 
 
 # --- Step 2: Import Matches ---------------------------------------------------
 
 def import_matches(cursor, conn):
-    print("\n" + "=" * 60)
-    print("STEP 2: Importing Matches")
-    print("=" * 60)
+    print("\n" + "=" * 60, flush=True)
+    print("STEP 2: Importing Matches (Fast Bulk Insert)...", flush=True)
+    print("=" * 60, flush=True)
 
-    count = 0
+    match_records = []
     skipped = 0
 
     for filename in sorted(os.listdir(JSON_FOLDER)):
@@ -222,7 +177,6 @@ def import_matches(cursor, conn):
         teams = info.get("teams", [])
 
         if len(teams) < 2:
-            print(f"  [SKIP] {filename} - teams missing")
             skipped += 1
             continue
 
@@ -258,73 +212,67 @@ def import_matches(cursor, conn):
 
         match_type = info.get("match_type")
 
-        cursor.execute("""
-            INSERT INTO matches (
-                source_file, match_date, season, team1, team2, venue, city,
-                toss_winner, toss_decision, winner, result_type,
-                event_name, match_number, match_type
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (source_file) DO UPDATE SET
-                match_date    = EXCLUDED.match_date,
-                season        = EXCLUDED.season,
-                team1         = EXCLUDED.team1,
-                team2         = EXCLUDED.team2,
-                venue         = EXCLUDED.venue,
-                city          = EXCLUDED.city,
-                toss_winner   = EXCLUDED.toss_winner,
-                toss_decision = EXCLUDED.toss_decision,
-                winner        = EXCLUDED.winner,
-                result_type   = EXCLUDED.result_type,
-                event_name    = EXCLUDED.event_name,
-                match_number  = EXCLUDED.match_number,
-                match_type    = EXCLUDED.match_type
-        """, (
+        match_records.append((
             filename, match_date, season, team1, team2, venue, city,
             toss_winner, toss_decision, winner, result_type,
-            event_name, match_number, match_type,
+            event_name, match_number, match_type
         ))
-        count += 1
-        print(f"  -> {filename}")
 
+    insert_query = """
+        INSERT INTO matches (
+            source_file, match_date, season, team1, team2, venue, city,
+            toss_winner, toss_decision, winner, result_type,
+            event_name, match_number, match_type
+        )
+        VALUES %s
+        ON CONFLICT (source_file) DO UPDATE SET
+            match_date    = EXCLUDED.match_date,
+            season        = EXCLUDED.season,
+            team1         = EXCLUDED.team1,
+            team2         = EXCLUDED.team2,
+            venue         = EXCLUDED.venue,
+            city          = EXCLUDED.city,
+            toss_winner   = EXCLUDED.toss_winner,
+            toss_decision = EXCLUDED.toss_decision,
+            winner        = EXCLUDED.winner,
+            result_type   = EXCLUDED.result_type,
+            event_name    = EXCLUDED.event_name,
+            match_number  = EXCLUDED.match_number,
+            match_type    = EXCLUDED.match_type
+    """
+
+    execute_values(cursor, insert_query, match_records, page_size=200)
     conn.commit()
-    print(f"\n  -> {count} matches imported/updated, {skipped} skipped.")
+    print(f"  -> {len(match_records)} matches imported/updated successfully ({skipped} skipped).", flush=True)
 
 
 # --- Step 3: Import Deliveries ------------------------------------------------
 
 def import_deliveries(cursor, conn):
-    print("\n" + "=" * 60)
-    print("STEP 3: Importing Deliveries")
-    print("=" * 60)
+    print("\n" + "=" * 60, flush=True)
+    print("STEP 3: Importing Deliveries (Fast Bulk Insert)...", flush=True)
+    print("=" * 60, flush=True)
 
-    count   = 0
-    skipped = 0
+    # Pre-fetch match_id mappings
+    cursor.execute("SELECT source_file, match_id FROM matches")
+    match_map = dict(cursor.fetchall())
+
+    all_deliveries = []
+    processed_matches = 0
 
     for filename in sorted(os.listdir(JSON_FOLDER)):
         if not filename.endswith(".json"):
             continue
 
-        cursor.execute(
-            "SELECT match_id FROM matches WHERE source_file = %s",
-            (filename,)
-        )
-        row = cursor.fetchone()
-
-        if row is None:
-            print(f"  [SKIP] {filename} - match not found in DB")
-            skipped += 1
+        match_id = match_map.get(filename)
+        if not match_id:
             continue
 
-        match_id  = row[0]
         file_path = os.path.join(JSON_FOLDER, filename)
-
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         innings_list = data.get("innings", [])
-
-        cursor.execute("DELETE FROM deliveries WHERE match_id = %s", (match_id,))
 
         for innings_index, innings_data in enumerate(innings_list, start=1):
             batting_team = innings_data.get("team")
@@ -364,41 +312,48 @@ def import_deliveries(cursor, conn):
                         player_out     = first_wicket.get("player_out")
                         dismissal_type = first_wicket.get("kind")
 
-                    cursor.execute("""
-                        INSERT INTO deliveries (
-                            match_id, innings, batting_team,
-                            over_number, ball_number,
-                            batter, non_striker, bowler,
-                            batter_runs, extras_runs, total_runs,
-                            wides, no_balls, byes, leg_byes,
-                            is_wicket, player_out, dismissal_type, phase
-                        )
-                        VALUES (
-                            %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s,
-                            %s, %s, %s, %s
-                        )
-                    """, (
+                    all_deliveries.append((
                         match_id, innings_index, batting_team,
                         over_number, ball_number,
                         batter, non_striker, bowler,
                         batter_runs, extras_runs, total_runs,
                         wides, no_balls, byes, leg_byes,
-                        is_wicket, player_out, dismissal_type, phase,
+                        is_wicket, player_out, dismissal_type, phase
                     ))
 
-        conn.commit()
-        print(f"  -> {filename}")
-        count += 1
+        processed_matches += 1
+        if len(all_deliveries) >= 10000:
+            # Batch flush deliveries
+            _flush_deliveries(cursor, conn, all_deliveries)
+            print(f"  [Progress] Inserted {len(all_deliveries)} deliveries across {processed_matches} matches...", flush=True)
+            all_deliveries = []
 
-    print(f"\n  -> {count} matches deliveries imported, {skipped} skipped.")
+    if all_deliveries:
+        _flush_deliveries(cursor, conn, all_deliveries)
+
+    print(f"  -> Deliveries imported across all {processed_matches} matches successfully.", flush=True)
+
+
+def _flush_deliveries(cursor, conn, delivery_records):
+    insert_query = """
+        INSERT INTO deliveries (
+            match_id, innings, batting_team,
+            over_number, ball_number,
+            batter, non_striker, bowler,
+            batter_runs, extras_runs, total_runs,
+            wides, no_balls, byes, leg_byes,
+            is_wicket, player_out, dismissal_type, phase
+        )
+        VALUES %s
+    """
+    execute_values(cursor, insert_query, delivery_records, page_size=2000)
+    conn.commit()
 
 
 # --- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("Connecting to database...")
+    print("Connecting to database...", flush=True)
     db_url = os.getenv("DATABASE_URL")
     if db_url:
         if "+asyncpg" in db_url:
@@ -413,16 +368,16 @@ if __name__ == "__main__":
         import_matches(cursor, conn)
         import_deliveries(cursor, conn)
 
-        print("\n" + "=" * 60)
-        print("All data imported successfully!")
-        print("=" * 60)
+        print("\n" + "=" * 60, flush=True)
+        print("ALL DATA IMPORTED SUCCESSFULLY TO POSTGRESQL!", flush=True)
+        print("=" * 60, flush=True)
 
     except Exception as e:
         conn.rollback()
-        print(f"\nError: {e}")
+        print(f"\nError: {e}", flush=True)
         raise
 
     finally:
         cursor.close()
         conn.close()
-        print("Database connection closed.")
+        print("Database connection closed.", flush=True)
