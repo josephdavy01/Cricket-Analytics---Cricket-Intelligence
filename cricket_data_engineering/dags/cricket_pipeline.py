@@ -35,14 +35,25 @@ with DAG(
         """,
     )
 
-    # # Step 3: Import players, matches, and ball-by-ball deliveries into PostgreSQL
-    # step3_import = BashOperator(
-    #     task_id="step3_import",
-    #     bash_command="""
-    #         set -e
-    #         cd /opt/airflow
-    #         python /opt/airflow/dags/step3.py
-    #     """,
-    # )
+    # Step 3: Import players, matches, and ball-by-ball deliveries into PostgreSQL
+    step3_db_loading = BashOperator(
+        task_id="step3_db_loading",
+        bash_command="""
+            set -e
+            cd /opt/airflow
+            python /opt/airflow/dags/step3.py
+        """,
+    )
 
-    step1_scraping >> step2_processing
+    # Step 4: Run Airflow models (ETL/ELT jobs)
+    step4_models = BashOperator(
+        task_id="step4_models",
+        bash_command="""
+            set -e
+            cd /opt/airflow/backend/app
+            airflow db upgrade
+            airflow celery worker
+        """,
+    )
+
+    step1_scraping >> step2_processing >> step3_db_loading >> step4_models
