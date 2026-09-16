@@ -50,52 +50,14 @@ The **Cricket Analytics Platform** automates the ingestion, transformation, anal
 ```mermaid
 flowchart TD
     subgraph Data_Engineering["1. Data Sourcing & Ingestion"]
-<<<<<<< HEAD
-        A1[ESPNcricinfo Squads & Profiles] -->|nodriver / Headless Chrome| S1[step1.py & step2.py]
-        A2[Cricsheet Ball-by-Ball JSONs] --> S3[step3.py / Ingestion Engine]
-        S1 --> S3
-        AF[Apache Airflow DAGs] -->|Orchestrates| S1
-=======
         A1["ESPNcricinfo Squads & Profiles"] -->|nodriver / Headless Chrome| S1["step1.py & step2.py"]
         A2["Cricsheet Ball-by-Ball JSONs"] --> S3["step3.py (Ingestion Engine)"]
         S1 --> S3
         AF["Apache Airflow DAGs"] -->|Orchestrates| S1
->>>>>>> 47ced93 (docs: add comprehensive project README with architecture and setup guide)
         AF -->|Orchestrates| S3
     end
 
     subgraph Storage["2. Data Warehouse (PostgreSQL)"]
-<<<<<<< HEAD
-        S3 --> DB[(PostgreSQL)]
-        DB --> T1[players, matches, deliveries]
-        DB --> T2[Analytical & Aggregation Views]
-        DB --> T3[ml_training_dataset_v2]
-    end
-
-    subgraph ML_Layer["3. Machine Learning & Modeling"]
-        T3 --> TR[train_final_model.py]
-        TR --> MDL[t20i_prediction_model.joblib]
-        MDL --> PRE[predict_match.py]
-    end
-
-    subgraph Service_Layer["4. Backend Service (FastAPI)"]
-        DB --> API[FastAPI REST API /api]
-        PRE --> API
-        API --> R1[/api/dashboard]
-        API --> R2[/api/players]
-        API --> R3[/api/matchups]
-        API --> R4[/api/teams & /api/venues]
-        API --> R5[/api/predict]
-    end
-
-    subgraph Client_Layer["5. Frontend Interface (Django)"]
-        API --> DJ[Django Web Application]
-        DJ --> UI1[Analytics Dashboard]
-        DJ --> UI2[Player Career Profiles]
-        DJ --> UI3[Head-to-Head & Matchups]
-        DJ --> UI4[Playing XI Simulator]
-        DJ --> UI5[Live Match Predictor]
-=======
         S3 --> DB[("PostgreSQL Database")]
         DB --> T1["players, matches, deliveries"]
         DB --> T2["Analytical & Aggregation Views"]
@@ -125,7 +87,6 @@ flowchart TD
         DJ --> UI3["Head-to-Head & Matchups"]
         DJ --> UI4["Playing XI Simulator"]
         DJ --> UI5["Live Match Predictor"]
->>>>>>> 47ced93 (docs: add comprehensive project README with architecture and setup guide)
     end
 ```
 
