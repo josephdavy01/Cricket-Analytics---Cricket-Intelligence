@@ -7,7 +7,9 @@ databases:
     user: cricket_admin
     plan: free
     region: oregon
-    ipAllowList: [] # Allow internal & external connections
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
 
 services:
   # ----------------------------------------------------
