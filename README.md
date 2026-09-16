@@ -10,6 +10,10 @@
 
 An end-to-end **Cricket Intelligence & Analytics Platform** combining automated data engineering pipelines, ball-by-ball PostgreSQL data warehousing, machine learning win-probability models, a high-performance **FastAPI** backend, and an interactive **Django** dashboard.
 
+<p align="center">
+  <img src="./docs/images/dashboard_overview.png" alt="Cricket Analytics Dashboard" width="100%" />
+</p>
+
 ---
 
 ## 📌 Table of Contents
@@ -96,35 +100,31 @@ flowchart TD
 
 ## 📸 Screenshots & UI Showcase
 
-<div align="center">
-
 ### 📊 Analytics Dashboard
-*Real-time tournament overview featuring total matches, player metrics, top run scorers, and leading wicket-takers.*
-<br>
-<img src="docs/images/dashboard_overview.png" alt="Cricket Analytics Dashboard" width="95%">
+> Real-time tournament overview featuring total matches, player metrics, top run scorers, and leading wicket-takers.
 
-<br><br>
+![Cricket Analytics Dashboard](./docs/images/dashboard_overview.png)
+
+---
 
 ### 👤 Players Directory & Profiles
-*Search and filter over 1,600+ international players by team and playing role with complete career profile cards.*
-<br>
-<img src="docs/images/players_directory.png" alt="Players Directory" width="95%">
+> Search and filter over 1,600+ international players by team and playing role with complete career profile cards.
 
-<br><br>
+![Players Directory](./docs/images/players_directory.png)
+
+---
 
 ### ⚔️ Team vs Team Rivalry Comparison
-*In-depth head-to-head records, win percentages, average par scores, and highest team totals.*
-<br>
-<img src="docs/images/team_vs_team.png" alt="Team vs Team Comparison" width="95%">
+> In-depth head-to-head records, win percentages, average par scores, and highest team totals.
 
-<br><br>
+![Team vs Team Comparison](./docs/images/team_vs_team.png)
+
+---
 
 ### 🏆 Team Strength Rankings
-*Dynamic Elo-based team strength rankings computed across recent 5-match rolling performance indicators.*
-<br>
-<img src="docs/images/team_strength_rankings.png" alt="Team Strength Rankings" width="95%">
+> Dynamic Elo-based team strength rankings computed across recent 5-match rolling performance indicators.
 
-</div>
+![Team Strength Rankings](./docs/images/team_strength_rankings.png)
 
 ---
 
@@ -390,9 +390,7 @@ python init_db.py
 
 The data ingestion, processing, and database loading pipelines are orchestrated using **Apache Airflow** running in a multi-container Docker environment. The pipeline automates squad discovery, player career statistics scraping, Cricsheet ball-by-ball log ingestion, and analytical model updates.
 
-<div align="center">
-  <img src="docs/images/airflow_dag_pipeline.png" alt="Airflow DAG Pipeline" width="95%">
-</div>
+![Airflow DAG Pipeline](./docs/images/airflow_dag_pipeline.png)
 
 ### Directed Acyclic Graph (DAG) Pipeline Workflow:
 1. **`step1_scraping`** *(BashOperator)*: Crawls international cricket squad registries and extracts player profile links from ESPNcricinfo using headless anti-detection browsing.
