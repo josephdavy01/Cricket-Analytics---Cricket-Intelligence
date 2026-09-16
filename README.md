@@ -100,31 +100,15 @@ flowchart TD
 
 ## 📸 Screenshots & UI Showcase
 
-### 📊 Analytics Dashboard
-> Real-time tournament overview featuring total matches, player metrics, top run scorers, and leading wicket-takers.
+| 📊 Analytics Dashboard | 👤 Players Directory & Profiles |
+| :---: | :---: |
+| <img src="./docs/images/dashboard_overview.png" alt="Analytics Dashboard" width="100%" /> | <img src="./docs/images/players_directory.png" alt="Players Directory" width="100%" /> |
+| *Real-time tournament overview, top run scorers & leading wicket-takers* | *Search and filter 1,600+ international players with complete career profiles* |
 
-![Cricket Analytics Dashboard](./docs/images/dashboard_overview.png)
-
----
-
-### 👤 Players Directory & Profiles
-> Search and filter over 1,600+ international players by team and playing role with complete career profile cards.
-
-![Players Directory](./docs/images/players_directory.png)
-
----
-
-### ⚔️ Team vs Team Rivalry Comparison
-> In-depth head-to-head records, win percentages, average par scores, and highest team totals.
-
-![Team vs Team Comparison](./docs/images/team_vs_team.png)
-
----
-
-### 🏆 Team Strength Rankings
-> Dynamic Elo-based team strength rankings computed across recent 5-match rolling performance indicators.
-
-![Team Strength Rankings](./docs/images/team_strength_rankings.png)
+| ⚔️ Team vs Team Rivalry Comparison | 🏆 Team Strength Rankings |
+| :---: | :---: |
+| <img src="./docs/images/team_vs_team.png" alt="Team vs Team Comparison" width="100%" /> | <img src="./docs/images/team_strength_rankings.png" alt="Team Strength Rankings" width="100%" /> |
+| *In-depth head-to-head records, win percentages & average par scores* | *Dynamic Elo-based team rankings computed across rolling 5-match form* |
 
 ---
 
@@ -390,7 +374,11 @@ python init_db.py
 
 The data ingestion, processing, and database loading pipelines are orchestrated using **Apache Airflow** running in a multi-container Docker environment. The pipeline automates squad discovery, player career statistics scraping, Cricsheet ball-by-ball log ingestion, and analytical model updates.
 
-![Airflow DAG Pipeline](./docs/images/airflow_dag_pipeline.png)
+<p align="center">
+  <img src="./docs/images/airflow_dag_pipeline.png" alt="Airflow DAG Pipeline" width="100%" />
+  <br>
+  <em>Apache Airflow DAG Graph (cricket_pipeline) Orchestrating Step 1 through Step 4</em>
+</p>
 
 ### Directed Acyclic Graph (DAG) Pipeline Workflow:
 1. **`step1_scraping`** *(BashOperator)*: Crawls international cricket squad registries and extracts player profile links from ESPNcricinfo using headless anti-detection browsing.
