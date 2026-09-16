@@ -18,7 +18,10 @@ JSON_FOLDER = os.path.join(BASE_DIR, "t20s_json")
 
 PLAYER_JSON = os.path.join(BASE_DIR, "Cricket", "Data", "cricket_squad_detailed.json")
 if not os.path.exists(PLAYER_JSON):
+    PLAYER_JSON = os.path.join(BASE_DIR, "cricket_data_engineering", "Data", "cricket_squad_detailed.json")
+if not os.path.exists(PLAYER_JSON):
     PLAYER_JSON = os.path.join(BASE_DIR, "Data", "cricket_squad_detailed.json")
+
 
 DB_CONFIG = dict(
     host="localhost",
@@ -396,7 +399,13 @@ def import_deliveries(cursor, conn):
 
 if __name__ == "__main__":
     print("Connecting to database...")
-    conn   = psycopg2.connect(**DB_CONFIG)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        if "+asyncpg" in db_url:
+            db_url = db_url.replace("+asyncpg", "")
+        conn = psycopg2.connect(db_url)
+    else:
+        conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
     try:
