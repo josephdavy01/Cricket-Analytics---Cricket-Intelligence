@@ -127,7 +127,7 @@ def import_database():
 
             if in_copy_block:
                 # Check for end-of-COPY marker: a line with just '\\.'
-                if raw_line == '\.':
+                if raw_line == r'\.':
                     # Execute the COPY block using copy_expert
                     try:
                         data_text = '\n'.join(copy_data) + '\n'
