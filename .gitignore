@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Airflow & General Logs
+**/logs/
+logs/
+*.log
+**/*.log
+airflow.cfg
+airflow.db
+webserver_config.py
+
+# PostgreSQL
+*.sql.gz
+
+# Raw match data & scraped cache
+t20s_json/
+**/Data/
+Data/
+Cricket/
+
+# ML models (Allow small project model files < 10MB for free hosting)
+*.pkl
+# *.joblib is allowed so t20i_prediction_model.joblib (2MB) can be deployed
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Temporary
+*.tmp
+*.temp
