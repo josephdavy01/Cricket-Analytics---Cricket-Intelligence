@@ -126,8 +126,8 @@ def import_database():
                 continue
 
             if in_copy_block:
-                # Check for end-of-COPY marker: a line with just '\.'
-                if raw_line == '\\.':
+                # Check for end-of-COPY marker: a line with just '\\.'
+                if raw_line == '\.':
                     # Execute the COPY block using copy_expert
                     try:
                         data_text = '\n'.join(copy_data) + '\n'
@@ -169,7 +169,7 @@ def import_database():
                     sql_buffer = []
 
                 in_copy_block = True
-                copy_header = copy_match.group(1) + " FROM STDIN"
+                copy_header = copy_match.group(1)
                 copy_data = []
                 continue
 
