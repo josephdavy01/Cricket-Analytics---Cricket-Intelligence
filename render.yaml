@@ -4,10 +4,10 @@
 databases:
   - name: cricket-postgres-db
     databaseName: t20i_cricket_analytics
-    user: postgres
+    user: cricket_admin
     plan: free
     region: oregon
-    ipAllowList: [] # Allow all internal connections
+    ipAllowList: [] # Allow internal & external connections
 
 services:
   # ----------------------------------------------------
