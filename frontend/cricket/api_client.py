@@ -6,9 +6,39 @@ All Django views use this to fetch data.
 import httpx
 from django.conf import settings
 
-API_BASE = getattr(settings, 'FASTAPI_BASE_URL', 'http://127.0.0.1:8000').rstrip('/')
-if not (API_BASE.startswith('http://') or API_BASE.startswith('https://')):
-    API_BASE = f"https://{API_BASE}" if "onrender.com" in API_BASE else f"http://{API_BASE}"
+import os
+
+def _get_api_base():
+    raw_base = getattr(settings, 'FASTAPI_BASE_URL', None) or os.getenv('FASTAPI_BASE_URL', '')
+    raw_base = raw_base.strip().rstrip('/')
+    
+    # If running locally without explicit URL
+    if not os.getenv('RENDER') and not os.getenv('RENDER_SERVICE_ID'):
+        if not raw_base or raw_base in ('http://127.0.0.1:8000', 'http://localhost:8000'):
+            return 'http://127.0.0.1:8000'
+
+    # Fallback default on Render
+    if not raw_base or raw_base in ('http://127.0.0.1:8000', 'http://localhost:8000'):
+        return 'https://cricket-analytics-api-8pbt.onrender.com'
+    
+    if not (raw_base.startswith('http://') or raw_base.startswith('https://')):
+        if '.' not in raw_base:
+            host_part = 'cricket-analytics-api-8pbt' if raw_base == 'cricket-analytics-api' else raw_base
+            return f'https://{host_part}.onrender.com'
+        elif 'onrender.com' in raw_base:
+            return f'https://{raw_base}'
+        else:
+            return f'http://{raw_base}'
+    
+    if 'cricket-analytics-api' in raw_base and 'onrender.com' not in raw_base:
+        host_part = raw_base.replace('http://', '').replace('https://', '').split(':')[0]
+        if host_part == 'cricket-analytics-api':
+            host_part = 'cricket-analytics-api-8pbt'
+        return f'https://{host_part}.onrender.com'
+        
+    return raw_base
+
+API_BASE = _get_api_base()
 
 
 
