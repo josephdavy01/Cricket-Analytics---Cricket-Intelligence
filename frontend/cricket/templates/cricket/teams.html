@@ -1,0 +1,77 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Team Strength — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Team Strength{% endblock %}
+{% block page_title %}Team Strength Rankings{% endblock %}
+
+{% block content %}
+<!-- Rankings -->
+<div class="card animate-in" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3>🏆 Overall Strength Score</h3>
+        <span class="badge badge-cyan">Based on Last 5 Matches</span>
+    </div>
+    <div class="card-body">
+        {% for team in strength %}
+        <div class="team-rank-card animate-in">
+            <div class="rank-number">{{ forloop.counter }}</div>
+            <div class="rank-info">
+                <h4>{{ team.team }}</h4>
+                <div class="score-breakdown">
+                    <div class="breakdown-item">Bat: <strong>{{ team.batting_score|default:"0" }}</strong></div>
+                    <div class="breakdown-item">Wkt: <strong>{{ team.wicket_score|default:"0" }}</strong></div>
+                    <div class="breakdown-item">Eco: <strong>{{ team.economy_score|default:"0" }}</strong></div>
+                    <div class="breakdown-item">Dots: <strong>{{ team.dot_ball_score|default:"0" }}</strong></div>
+                </div>
+                <div class="score-bar" style="margin-top:8px;">
+                    <div class="score-bar-fill" data-width="{{ team.team_strength_score }}" style="width:0%;"></div>
+                </div>
+            </div>
+            <div class="rank-score">{{ team.team_strength_score }}</div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">🏆</div>
+            <p>No team strength data available</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Detailed Stats Table -->
+<div class="card animate-in">
+    <div class="card-header">
+        <h3>📊 Detailed Stats (Last 5 Matches)</h3>
+    </div>
+    <div class="card-body" style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Matches</th>
+                    <th>Total Runs</th>
+                    <th>Avg Score</th>
+                    <th>Wickets Taken</th>
+                    <th>Economy</th>
+                    <th>Dot Balls</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in strength_stats %}
+                <tr>
+                    <td class="highlight">{{ team.team }}</td>
+                    <td>{{ team.matches_used }}</td>
+                    <td>{{ team.total_runs_last_5_matches }}</td>
+                    <td class="highlight">{{ team.avg_score_last_5_matches }}</td>
+                    <td>{{ team.wickets_last_5_matches }}</td>
+                    <td>{{ team.economy_last_5_matches }}</td>
+                    <td>{{ team.dot_balls_last_5_matches }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No data</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

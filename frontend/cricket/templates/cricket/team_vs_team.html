@@ -1,0 +1,104 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Team vs Team — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Team vs Team{% endblock %}
+{% block page_title %}Team vs Team Comparison{% endblock %}
+
+{% block content %}
+<!-- Team Selector -->
+<div class="filter-bar animate-in">
+    <form method="get" style="display:flex; gap:16px; align-items:end; flex-wrap:wrap; width:100%;">
+        <div class="form-group">
+            <label>Team A</label>
+            <select name="team_a" class="form-select">
+                <option value="">Select Team A</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if team == team_a %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Team B</label>
+            <select name="team_b" class="form-select">
+                <option value="">Select Team B</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if team == team_b %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Compare ⚔️</button>
+    </form>
+</div>
+
+{% if comparison %}
+<!-- VS Display -->
+<div class="vs-container animate-in">
+    <div class="vs-team">
+        <h3>{{ comparison.team_a }}</h3>
+        <div style="margin-top:20px;">
+            <div style="font-family:'Outfit',sans-serif; font-size:2.5rem; font-weight:800; color:var(--accent-purple);">{{ comparison.team_a_wins }}</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">Wins</div>
+        </div>
+        <div style="margin-top:16px; display:flex; justify-content:center; gap:20px;">
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_a_win_percentage|default:"0" }}%</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Win %</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_a_average_score|default:"0" }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Avg Score</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_a_highest_score|default:"0" }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Highest</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="vs-divider">
+        <div class="vs-badge">VS</div>
+    </div>
+
+    <div class="vs-team">
+        <h3>{{ comparison.team_b }}</h3>
+        <div style="margin-top:20px;">
+            <div style="font-family:'Outfit',sans-serif; font-size:2.5rem; font-weight:800; color:var(--accent-gold);">{{ comparison.team_b_wins }}</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">Wins</div>
+        </div>
+        <div style="margin-top:16px; display:flex; justify-content:center; gap:20px;">
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_b_win_percentage|default:"0" }}%</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Win %</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_b_average_score|default:"0" }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Avg Score</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ comparison.team_b_highest_score|default:"0" }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">Highest</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Match Count -->
+<div class="card animate-in">
+    <div class="card-body" style="text-align:center;">
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">Total Matches Played</div>
+        <div style="font-family:'Outfit',sans-serif; font-size:3rem; font-weight:800; color:var(--accent-cyan);">{{ comparison.matches_played }}</div>
+    </div>
+</div>
+
+{% elif team_a and team_b %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">🔍</div>
+    <p>No head-to-head data found for these two teams.</p>
+</div>
+{% else %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">⚔️</div>
+    <p>Select two teams above to see their head-to-head comparison.</p>
+</div>
+{% endif %}
+{% endblock %}

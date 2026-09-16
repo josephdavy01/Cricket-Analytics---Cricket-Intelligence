@@ -1,0 +1,96 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Venues — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Venues{% endblock %}
+{% block page_title %}Venue Statistics{% endblock %}
+
+{% block content %}
+<div class="grid-3">
+    {% for venue in venues %}
+    <div class="venue-card animate-in">
+        <div class="venue-name">🏟️ {{ venue.venue }}</div>
+        <div class="venue-stats">
+            <div class="venue-stat">
+                <div class="value">{{ venue.matches_played }}</div>
+                <div class="label">Matches</div>
+            </div>
+            <div class="venue-stat">
+                <div class="value">{{ venue.avg_first_innings_score|default:"-" }}</div>
+                <div class="label">Avg 1st Inn</div>
+            </div>
+            <div class="venue-stat">
+                <div class="value">{{ venue.highest_first_innings_score|default:"-" }}</div>
+                <div class="label">Highest</div>
+            </div>
+            <div class="venue-stat">
+                <div class="value">{{ venue.lowest_first_innings_score|default:"-" }}</div>
+                <div class="label">Lowest</div>
+            </div>
+            <div class="venue-stat">
+                <div class="value" style="color:var(--accent-green);">{{ venue.chasing_win_percentage|default:"0" }}%</div>
+                <div class="label">Chase Win %</div>
+            </div>
+            <div class="venue-stat">
+                <div class="value" style="color:var(--accent-purple);">{{ venue.defending_win_percentage|default:"0" }}%</div>
+                <div class="label">Defend Win %</div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-icon">🏟️</div>
+        <p>No venue data available</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toss Stats -->
+{% if toss_stats %}
+<div class="card animate-in" style="margin-top: 28px;">
+    <div class="card-header">
+        <h3>🪙 Toss Statistics by Team</h3>
+        <span class="badge badge-cyan">{{ toss_stats|length }} records</span>
+    </div>
+    <div class="card-body" style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Toss Result</th>
+                    <th>Batting Situation</th>
+                    <th>Matches</th>
+                    <th>Won</th>
+                    <th>Lost</th>
+                    <th>Win %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in toss_stats %}
+                <tr>
+                    <td class="highlight">{{ stat.team }}</td>
+                    <td>
+                        {% if stat.toss_result == "Won Toss" %}
+                        <span class="badge badge-green">Won Toss</span>
+                        {% else %}
+                        <span class="badge badge-purple">Lost Toss</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if stat.batting_situation == "Chasing" %}
+                        <span class="badge badge-cyan">Chasing</span>
+                        {% else %}
+                        <span class="badge badge-gold">Defending</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ stat.matches_played }}</td>
+                    <td style="color:var(--accent-green);">{{ stat.matches_won }}</td>
+                    <td style="color:var(--accent-red);">{{ stat.matches_lost }}</td>
+                    <td class="highlight">{{ stat.win_percentage|default:"0" }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

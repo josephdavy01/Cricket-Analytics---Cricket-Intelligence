@@ -1,0 +1,484 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}AI Match Prediction — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Match Prediction{% endblock %}
+{% block page_title %}AI Match Prediction Engine{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom Styled Components for Prediction Page */
+    .pred-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .pred-hero-panel {
+        background: linear-gradient(135deg, rgba(20, 26, 45, 0.9), rgba(10, 14, 26, 0.95));
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-xl);
+        padding: 24px;
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(12px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pred-hero-panel::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08), transparent 70%);
+        pointer-events: none;
+    }
+
+    .preset-pills {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .preset-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .preset-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-glass);
+        color: var(--text-secondary);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .preset-btn:hover {
+        background: rgba(139, 92, 246, 0.15);
+        border-color: var(--accent-purple);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+    }
+
+    .winner-card-hero {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(245, 166, 35, 0.1) 100%);
+        border: 1px solid rgba(245, 166, 35, 0.3);
+        border-radius: var(--radius-xl);
+        padding: 28px;
+        text-align: center;
+        box-shadow: 0 0 35px rgba(245, 166, 35, 0.12);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .winner-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--gradient-gold);
+        color: #000;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        padding: 6px 16px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(245, 166, 35, 0.4);
+        margin-bottom: 12px;
+    }
+
+    .winner-team-name {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #ffffff;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        margin-bottom: 6px;
+    }
+
+    .win-confidence {
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+    }
+
+    .prob-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .prob-header-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .team-label-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .team-dot-a {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent-purple);
+        box-shadow: 0 0 10px var(--accent-purple);
+    }
+
+    .team-dot-b {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent-gold);
+        box-shadow: 0 0 10px var(--accent-gold);
+    }
+
+    .team-name-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .prob-percent-big {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .prob-bar-container {
+        height: 24px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        border: 1px solid var(--border-glass);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .prob-fill-a {
+        background: var(--gradient-primary);
+        height: 100%;
+        transition: width 1s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .prob-fill-b {
+        background: var(--gradient-gold);
+        height: 100%;
+        transition: width 1s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 120px 1fr;
+        gap: 16px;
+        align-items: center;
+    }
+
+    @media (max-width: 768px) {
+        .comparison-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .vs-center-badge {
+            margin: 12px auto;
+        }
+    }
+
+    .team-comp-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+    }
+
+    .team-comp-card.team-a-card {
+        border-top: 3px solid var(--accent-purple);
+    }
+
+    .team-comp-card.team-b-card {
+        border-top: 3px solid var(--accent-gold);
+    }
+
+    .vs-center-badge {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .vs-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(245, 166, 35, 0.3));
+        border: 2px solid var(--border-glass);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .stat-metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-glass);
+    }
+
+    .stat-metric-row:last-child {
+        border-bottom: none;
+    }
+
+    .stat-name {
+        font-size: 0.84rem;
+        color: var(--text-muted);
+    }
+
+    .stat-val {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .venue-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+    }
+</style>
+
+<div class="pred-container">
+    <!-- Selector Bar Panel -->
+    <div class="pred-hero-panel animate-in">
+        <form method="get" onsubmit="return validatePredictionForm(event)"
+            style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; width:100%;">
+            <div class="form-group" style="flex:1; min-width:200px;">
+                <label for="team_a" style="font-weight:600; color:var(--accent-purple); font-size:0.9rem;">⚡ Team
+                    A</label>
+                <select id="team_a" name="team_a" class="form-select" required
+                    style="background:var(--bg-secondary); border-color:var(--border-glass); color:var(--text-primary);">
+                    <option value="">Select Team A</option>
+                    {% for team in teams %}
+                    <option value="{{ team }}" {% if team == team_a %}selected{% endif %}>{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="flex:1; min-width:200px;">
+                <label for="team_b" style="font-weight:600; color:var(--accent-gold); font-size:0.9rem;">🔥 Team
+                    B</label>
+                <select id="team_b" name="team_b" class="form-select" required
+                    style="background:var(--bg-secondary); border-color:var(--border-glass); color:var(--text-primary);">
+                    <option value="">Select Team B</option>
+                    {% for team in teams %}
+                    <option value="{{ team }}" {% if team == team_b %}selected{% endif %}>{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="flex:1.5; min-width:340px;">
+                <label for="venue" style="font-weight:600; color:var(--accent-cyan); font-size:0.9rem;">🏟️ Stadium /
+                    Venue</label>
+                <select id="venue" name="venue" class="form-select" required
+                    style="background:var(--bg-secondary); border-color:var(--border-glass); color:var(--text-primary);">
+                    <option value="">Select Match Venue</option>
+                    {% for v in venues %}
+                    <option value="{{ v }}" {% if v == venue %}selected{% endif %}>{{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"
+                style="
+                    padding: 10px 20px;
+                    font-weight: 700;
+                    font-size: 1rem;
+                    box-shadow: 0 0 20px rgba(139,92,246,0.4);
+                    position: relative;
+                    top: -16px;
+                ">
+                Predict Match 🔮
+            </button>
+        </form>
+
+
+        {% if result and not result.error %}
+        <!-- Hero Winner Announcement Card -->
+        <div class="winner-card-hero animate-in">
+            <div class="winner-badge">🏆 Predicted Match Winner</div>
+            <div class="winner-team-name">{{ result.predicted_winner }}</div>
+            <div class="win-confidence">
+                Based on historical match form, head-to-head records, venue bias, and statistical model weighting.
+            </div>
+        </div>
+
+        <!-- Win Probability Bar Section -->
+        <div class="prob-section animate-in">
+            <div class="prob-header-labels">
+                <div class="team-label-box">
+                    <div class="team-dot-a"></div>
+                    <div>
+                        <div class="team-name-title" style="color:var(--accent-purple);">{{ team_a }}</div>
+                        <div class="prob-percent-big" style="color:var(--accent-purple);">{{ result.team_a_win_probability }}%</div>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <span style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:600;">Win Probability</span>
+                </div>
+                <div class="team-label-box" style="flex-direction:row-reverse; text-align:right;">
+                    <div class="team-dot-b"></div>
+                    <div>
+                        <div class="team-name-title" style="color:var(--accent-gold);">{{ team_b }}</div>
+                        <div class="prob-percent-big" style="color:var(--accent-gold);">{{ result.team_b_win_probability }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Comparison Breakdown -->
+        <div class="comparison-grid animate-in">
+            <!-- Team A Stats -->
+            <div class="team-comp-card team-a-card">
+                <h3 style="color:var(--accent-purple); font-family:'Outfit',sans-serif; margin-bottom:14px;">{{ team_a }}</h3>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Overall Strength Score</span>
+                    <span class="stat-val" style="color:var(--accent-purple);">{{ result.team_a_strength|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Avg Score (Last 5)</span>
+                    <span class="stat-val">{{ result.team_a_recent_avg_score|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Wickets Taken</span>
+                    <span class="stat-val">{{ result.team_a_recent_wickets|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Bowling Economy</span>
+                    <span class="stat-val">{{ result.team_a_recent_economy|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Head-to-Head Win %</span>
+                    <span class="stat-val" style="color:var(--accent-green);">{{ result.team_a_h2h_win_percentage|default:"-" }}%</span>
+                </div>
+            </div>
+
+            <!-- VS Center Badge -->
+            <div class="vs-center-badge">
+                <div class="vs-circle">VS</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px; font-weight:600;">METRICS</div>
+            </div>
+
+            <!-- Team B Stats -->
+            <div class="team-comp-card team-b-card">
+                <h3 style="color:var(--accent-gold); font-family:'Outfit',sans-serif; margin-bottom:14px;">{{ team_b }}</h3>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Overall Strength Score</span>
+                    <span class="stat-val" style="color:var(--accent-gold);">{{ result.team_b_strength|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Avg Score (Last 5)</span>
+                    <span class="stat-val">{{ result.team_b_recent_avg_score|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Wickets Taken</span>
+                    <span class="stat-val">{{ result.team_b_recent_wickets|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Recent Bowling Economy</span>
+                    <span class="stat-val">{{ result.team_b_recent_economy|default:"-" }}</span>
+                </div>
+                <div class="stat-metric-row">
+                    <span class="stat-name">Head-to-Head Win %</span>
+                    <span class="stat-val" style="color:var(--accent-green);">{{ result.team_b_h2h_win_percentage|default:"-" }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Venue Stats Panel -->
+        <div class="venue-card animate-in">
+            <h3 style="font-family:'Outfit',sans-serif; margin-bottom:16px;">🏟️ Venue Breakdown — {{ venue }}</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border-glass); padding:16px; border-radius:var(--radius-md);">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Matches Tracked at Venue</div>
+                    <div style="font-size:1.4rem; font-weight:700; color:var(--accent-cyan); margin-top:4px;">{{ result.venue_matches|default:"0" }}</div>
+                </div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border-glass); padding:16px; border-radius:var(--radius-md);">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Avg 1st Innings Score</div>
+                    <div style="font-size:1.4rem; font-weight:700; color:var(--text-primary); margin-top:4px;">{{ result.venue_avg_first_innings_score|default:"160" }}</div>
+                </div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border-glass); padding:16px; border-radius:var(--radius-md);">
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Historical Pitch Advantage</div>
+                    <div style="font-size:0.95rem; font-weight:600; color:var(--accent-green); margin-top:4px;">Balanced Pitch Conditions</div>
+                </div>
+            </div>
+        </div>
+
+        {% elif result.error %}
+        <div class="empty-state animate-in" style="background:var(--bg-card); border:1px solid rgba(248, 113, 113, 0.3); padding:40px; text-align:center; border-radius:var(--radius-lg);">
+            <div class="empty-icon" style="font-size:3rem; margin-bottom:12px;">⚠️</div>
+            <h3 style="color:var(--accent-red); font-family:'Outfit',sans-serif;">Prediction Calculation Error</h3>
+            <p style="color:var(--text-secondary); margin-top:8px;">{{ result.error }}</p>
+        </div>
+        {% else %}
+        <!-- Initial Welcome State -->
+        <div class="empty-state animate-in" style="background:var(--bg-card); border:1px solid var(--border-glass); padding:48px; text-align:center; border-radius:var(--radius-xl);">
+            <div class="empty-icon" style="font-size:3.5rem; margin-bottom:16px;">🔮</div>
+            <h3 style="font-family:'Outfit',sans-serif; font-size:1.5rem; color:var(--text-primary); margin-bottom:8px;">Select Match Details for Instant AI Prediction</h3>
+            <p style="color:var(--text-secondary); max-width:540px; margin:0 auto 20px auto; font-size:0.95rem;">
+                Choose two teams and a venue above or pick a quick match preset to compute win probabilities, team metrics, and venue insights.
+            </p>
+        </div>
+        {% endif %}
+
+    </div><!-- /.pred-hero-panel -->
+</div><!-- /.pred-container -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function validatePredictionForm(e) {
+    const teamA = document.getElementById('team_a').value;
+    const teamB = document.getElementById('team_b').value;
+    if (teamA && teamB && teamA === teamB) {
+        alert("Please select two different teams for the match prediction.");
+        e.preventDefault();
+        return false;
+    }
+    return true;
+}
+</script>
+{% endblock %}

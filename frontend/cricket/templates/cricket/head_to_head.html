@@ -1,0 +1,634 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Head to Head — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Head to Head{% endblock %}
+{% block page_title %}Batter vs Bowler Matchup{% endblock %}
+
+{% block content %}
+<style>
+/* ── H2H Selector Card ── */
+.h2h-selector-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-xl);
+    padding: 32px 36px 28px;
+    margin-bottom: 28px;
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+    animation: fadeSlideUp 0.5s ease both;
+}
+.h2h-selector-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 0%, rgba(34,211,238,0.06) 0%, transparent 60%);
+    pointer-events: none;
+}
+.h2h-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+.h2h-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+}
+.h2h-header p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.h2h-columns {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    align-items: center;
+}
+/* VS Divider */
+.h2h-vs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0 28px;
+}
+.h2h-vs-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: white;
+    box-shadow: 0 0 24px rgba(139,92,246,0.4), 0 0 48px rgba(139,92,246,0.15);
+    animation: pulse-glow 2.5s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 24px rgba(139,92,246,0.4), 0 0 48px rgba(139,92,246,0.15); }
+    50%       { box-shadow: 0 0 36px rgba(139,92,246,0.65), 0 0 60px rgba(139,92,246,0.25); }
+}
+.h2h-vs-line {
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, rgba(139,92,246,0.35), transparent);
+}
+/* Player column */
+.h2h-player-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.h2h-player-col.batter { align-items: flex-end; }
+.h2h-player-col.bowler { align-items: flex-start; }
+
+.h2h-col-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.h2h-col-label.batter { color: var(--accent-purple); flex-direction: row-reverse; }
+.h2h-col-label.bowler { color: var(--accent-cyan); }
+.h2h-col-label .col-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+}
+.h2h-col-label.batter .col-icon { background: rgba(139,92,246,0.15); }
+.h2h-col-label.bowler .col-icon { background: rgba(34,211,238,0.12); }
+
+.h2h-field-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+/* Search input wrapper */
+.h2h-search-wrap {
+    position: relative;
+}
+.h2h-search-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.95rem;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.7;
+}
+.h2h-search-input {
+    width: 100%;
+    padding: 12px 36px 12px 40px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.h2h-search-input::placeholder { color: var(--text-muted); }
+.h2h-search-input:focus {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px var(--accent-purple-glow);
+}
+.bowler-side .h2h-search-input:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+}
+.h2h-search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 50%;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+.h2h-search-clear.visible { opacity: 1; pointer-events: auto; }
+.h2h-search-clear:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+
+/* Divider between search and select */
+.h2h-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.h2h-or-divider::before, .h2h-or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-glass);
+}
+
+/* Select dropdown */
+.h2h-select {
+    width: 100%;
+    padding: 11px 40px 11px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+}
+.h2h-select:focus {
+    background-color: rgba(255,255,255,0.06);
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px var(--accent-purple-glow);
+}
+.bowler-side .h2h-select:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+}
+.h2h-select option { background: #1a2035; color: var(--text-primary); }
+.h2h-select optgroup { background: #1a2035; color: var(--text-muted); font-size: 0.75rem; }
+
+/* Autocomplete dropdown list */
+.h2h-ac-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: #131c30;
+    border: 1px solid var(--border-hover);
+    border-radius: var(--radius-md);
+    list-style: none;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 300;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139,92,246,0.3) transparent;
+}
+.h2h-ac-list.open { display: block; }
+.h2h-ac-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    cursor: pointer;
+    gap: 12px;
+    transition: background 0.15s ease;
+}
+.h2h-ac-item:hover, .h2h-ac-item.active { background: rgba(139,92,246,0.12); }
+.h2h-ac-item .pac-name {
+    font-size: 0.88rem; font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.h2h-ac-item .pac-team {
+    font-size: 0.7rem; color: var(--accent-cyan); font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
+    padding: 2px 8px;
+    background: rgba(34,211,238,0.08);
+    border-radius: 20px;
+}
+.h2h-ac-no-result {
+    padding: 14px; font-size: 0.82rem;
+    color: var(--text-muted); text-align: center;
+}
+
+/* Action row */
+.h2h-action-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+}
+.btn-analyze {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 48px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn-analyze:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(139,92,246,0.55);
+}
+.btn-analyze .btn-icon { font-size: 1.15rem; }
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 820px) {
+    .h2h-columns { grid-template-columns: 1fr; gap: 20px; }
+    .h2h-vs { flex-direction: row; padding: 0; }
+    .h2h-vs-line { width: 60px; height: 1px;
+        background: linear-gradient(to right, transparent, rgba(139,92,246,0.35), transparent); }
+    .h2h-player-col.batter, .h2h-player-col.bowler { align-items: stretch; }
+    .h2h-col-label.batter { flex-direction: row; }
+}
+</style>
+
+<!-- Batter vs Bowler Selector -->
+<div class="h2h-selector-card animate-in">
+    <div class="h2h-header">
+        <h2>⚡ Select Your Matchup</h2>
+        <p>Search or pick from the dropdown — then hit Analyze</p>
+    </div>
+
+    <form method="get" id="h2h-form">
+        <div class="h2h-columns">
+
+            <!-- ── BATTER column ── -->
+            <div class="h2h-player-col batter">
+                <div class="h2h-col-label batter">
+                    <span class="col-icon">🏏</span>
+                    Batter
+                </div>
+                <div class="h2h-field-group">
+                    <!-- Search bar -->
+                    <div class="h2h-search-wrap" style="position:relative;">
+                        <span class="h2h-search-icon">🔍</span>
+                        <input
+                            type="text"
+                            id="batter-input"
+                            class="h2h-search-input"
+                            placeholder="Search by name or team…"
+                            autocomplete="off"
+                            aria-autocomplete="list"
+                            aria-controls="batter-ac-list"
+                        >
+                        <button type="button" class="h2h-search-clear" id="batter-clear" title="Clear">✕</button>
+                        <ul class="h2h-ac-list" id="batter-ac-list" role="listbox"></ul>
+                    </div>
+                    <!-- OR divider -->
+                    <div class="h2h-or-divider">or</div>
+                    <!-- Select dropdown -->
+                    <select class="h2h-select" id="batter-select">
+                        <option value="">— Select Batter —</option>
+                        {% for b in batters %}
+                        <option value="{{ b.player_id }}" {% if b.player_id|stringformat:"s" == selected_batter %}selected{% endif %}>
+                            {{ b.name }} ({{ b.team }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="batter_id" id="batter-id" value="{{ selected_batter }}">
+                </div>
+            </div>
+
+            <!-- ── VS divider ── -->
+            <div class="h2h-vs">
+                <div class="h2h-vs-line"></div>
+                <div class="h2h-vs-badge">VS</div>
+                <div class="h2h-vs-line"></div>
+            </div>
+
+            <!-- ── BOWLER column ── -->
+            <div class="h2h-player-col bowler bowler-side">
+                <div class="h2h-col-label bowler">
+                    <span class="col-icon">⚡</span>
+                    Bowler
+                </div>
+                <div class="h2h-field-group">
+                    <!-- Search bar -->
+                    <div class="h2h-search-wrap" style="position:relative;">
+                        <span class="h2h-search-icon">🔍</span>
+                        <input
+                            type="text"
+                            id="bowler-input"
+                            class="h2h-search-input"
+                            placeholder="Search by name or team…"
+                            autocomplete="off"
+                            aria-autocomplete="list"
+                            aria-controls="bowler-ac-list"
+                        >
+                        <button type="button" class="h2h-search-clear" id="bowler-clear" title="Clear">✕</button>
+                        <ul class="h2h-ac-list" id="bowler-ac-list" role="listbox"></ul>
+                    </div>
+                    <!-- OR divider -->
+                    <div class="h2h-or-divider">or</div>
+                    <!-- Select dropdown -->
+                    <select class="h2h-select" id="bowler-select">
+                        <option value="">— Select Bowler —</option>
+                        {% for b in bowlers %}
+                        <option value="{{ b.player_id }}" {% if b.player_id|stringformat:"s" == selected_bowler %}selected{% endif %}>
+                            {{ b.name }} ({{ b.team }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="bowler_id" id="bowler-id" value="{{ selected_bowler }}">
+                </div>
+            </div>
+
+        </div><!-- /.h2h-columns -->
+
+        <div class="h2h-action-row">
+            <button type="submit" class="btn-analyze">
+                <span class="btn-icon">🎯</span>
+                Analyze Matchup
+            </button>
+        </div>
+    </form>
+</div>
+
+{{ batters|json_script:"batters-data" }}
+{{ bowlers|json_script:"bowlers-data" }}
+
+<script>
+(function () {
+    // Player data from Django context (safely serialised via json_script)
+    var BATTERS = JSON.parse(document.getElementById('batters-data').textContent);
+    var BOWLERS = JSON.parse(document.getElementById('bowlers-data').textContent);
+
+    function initAutocomplete(inputId, listId, hiddenId, clearId, selectId, players, preselectedId) {
+        var input    = document.getElementById(inputId);
+        var list     = document.getElementById(listId);
+        var hidden   = document.getElementById(hiddenId);
+        var clearBtn = document.getElementById(clearId);
+        var sel      = document.getElementById(selectId);
+        var activeIdx = -1;
+
+        // Pre-fill if a player was already selected (e.g. page reload after submit)
+        if (preselectedId) {
+            var pre = players.find(function(p){ return String(p.player_id) === String(preselectedId); });
+            if (pre) {
+                input.value  = pre.name;
+                hidden.value = pre.player_id;
+                clearBtn.classList.add('visible');
+            }
+            // Also sync the select dropdown
+            if (sel) sel.value = preselectedId;
+        }
+
+        function renderList(matches) {
+            list.innerHTML = '';
+            activeIdx = -1;
+            if (matches.length === 0) {
+                var li = document.createElement('li');
+                li.className = 'h2h-ac-no-result';
+                li.textContent = 'No players found';
+                list.appendChild(li);
+            } else {
+                matches.forEach(function(p) {
+                    var li = document.createElement('li');
+                    li.className = 'h2h-ac-item';
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('data-id', p.player_id);
+                    li.innerHTML =
+                        '<span class="pac-name">' + p.name + '</span>' +
+                        '<span class="pac-team">' + p.team + '</span>';
+                    li.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        selectPlayer(p);
+                    });
+                    list.appendChild(li);
+                });
+            }
+            list.classList.add('open');
+        }
+
+        function selectPlayer(p) {
+            input.value  = p.name;
+            hidden.value = p.player_id;
+            // Sync select dropdown
+            if (sel) sel.value = p.player_id;
+            list.classList.remove('open');
+            list.innerHTML = '';
+            clearBtn.classList.add('visible');
+        }
+
+        function closeList() {
+            list.classList.remove('open');
+        }
+
+        input.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            hidden.value = '';
+            if (sel) sel.value = '';
+            clearBtn.classList.toggle('visible', q.length > 0);
+            if (q.length === 0) { closeList(); return; }
+            var matches = players.filter(function(p) {
+                return p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q);
+            });
+            renderList(matches);
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', function(e) {
+            var items = list.querySelectorAll('.h2h-ac-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIdx = Math.min(activeIdx + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIdx = Math.max(activeIdx - 1, 0);
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                var id = items[activeIdx].getAttribute('data-id');
+                var p  = players.find(function(x){ return String(x.player_id) === id; });
+                if (p) selectPlayer(p);
+                return;
+            } else if (e.key === 'Escape') {
+                closeList(); return;
+            } else { return; }
+            items.forEach(function(el, i) {
+                el.classList.toggle('active', i === activeIdx);
+                if (i === activeIdx) el.scrollIntoView({ block: 'nearest' });
+            });
+        });
+
+        input.addEventListener('blur', function() { setTimeout(closeList, 150); });
+
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length > 0 && !hidden.value) {
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+
+        clearBtn.addEventListener('click', function() {
+            input.value  = '';
+            hidden.value = '';
+            if (sel) sel.value = '';
+            this.classList.remove('visible');
+            closeList();
+            input.focus();
+        });
+
+        // Select dropdown → sync search input + hidden field
+        if (sel) {
+            sel.addEventListener('change', function() {
+                var id = this.value;
+                if (!id) {
+                    input.value  = '';
+                    hidden.value = '';
+                    clearBtn.classList.remove('visible');
+                    return;
+                }
+                var p = players.find(function(x){ return String(x.player_id) === id; });
+                if (p) {
+                    input.value  = p.name;
+                    hidden.value = p.player_id;
+                    clearBtn.classList.add('visible');
+                }
+            });
+        }
+    }
+
+    initAutocomplete('batter-input', 'batter-ac-list', 'batter-id', 'batter-clear', 'batter-select', BATTERS, "{{ selected_batter }}");
+    initAutocomplete('bowler-input', 'bowler-ac-list', 'bowler-id', 'bowler-clear', 'bowler-select', BOWLERS, "{{ selected_bowler }}");
+})();
+</script>
+
+{% if matchups %}
+<div class="card animate-in">
+    <div class="card-header">
+        <h3>🎯 Matchup Results</h3>
+        <span class="badge badge-purple">{{ matchups|length }} records</span>
+    </div>
+    <div class="card-body" style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Batter</th>
+                    <th>Bowler</th>
+                    <th>Balls</th>
+                    <th>Runs</th>
+                    <th>Dismissals</th>
+                    <th>Dots</th>
+                    <th>4s</th>
+                    <th>6s</th>
+                    <th>SR</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in matchups %}
+                <tr>
+                    <td class="highlight">
+                        <a href="{% url 'player_detail' m.batter_id %}">{{ m.batter }}</a>
+                    </td>
+                    <td class="highlight">
+                        <a href="{% url 'player_detail' m.bowler_id %}">{{ m.bowler }}</a>
+                    </td>
+                    <td>{{ m.balls_faced }}</td>
+                    <td class="highlight">{{ m.runs }}</td>
+                    <td>
+                        {% if m.dismissals >= 2 %}
+                        <span class="matchup-negative">{{ m.dismissals }}</span>
+                        {% elif m.dismissals == 0 %}
+                        <span class="matchup-positive">{{ m.dismissals }}</span>
+                        {% else %}
+                        {{ m.dismissals }}
+                        {% endif %}
+                    </td>
+                    <td>{{ m.dot_balls }}</td>
+                    <td>{{ m.fours }}</td>
+                    <td>{{ m.sixes }}</td>
+                    <td>
+                        {% if m.strike_rate >= 150 %}
+                        <span class="matchup-positive">{{ m.strike_rate }}</span>
+                        {% elif m.strike_rate < 100 %}
+                        <span class="matchup-negative">{{ m.strike_rate }}</span>
+                        {% else %}
+                        {{ m.strike_rate }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif selected_batter or selected_bowler %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">🔍</div>
+    <p>No head-to-head data found for the selected players.</p>
+</div>
+{% else %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">🎯</div>
+    <p>Select a batter and/or bowler to see their matchup stats.</p>
+</div>
+{% endif %}
+{% endblock %}

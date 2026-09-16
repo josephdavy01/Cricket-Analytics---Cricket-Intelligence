@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cricket Analytics — Premium dashboard for cricket statistics, player profiles, team rankings, match predictions and more.">
+    <title>{% block title %}Cricket Analytics{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'cricket/css/style.css' %}">
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<button class="mobile-toggle" id="mobileToggle">☰</button>
+
+<div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo-icon">🏏</div>
+            <div>
+                <h1>Cricket Analytics</h1>
+                <div class="subtitle">Cricket Intelligence</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Overview</div>
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+
+            <div class="nav-section-title">Analysis</div>
+            <a href="{% url 'players' %}" class="nav-link {% if request.resolver_match.url_name == 'players' or request.resolver_match.url_name == 'player_detail' %}active{% endif %}" id="nav-players">
+                <span class="nav-icon">👤</span> Players
+            </a>
+            <a href="{% url 'teams' %}" class="nav-link {% if request.resolver_match.url_name == 'teams' %}active{% endif %}" id="nav-teams">
+                <span class="nav-icon">🏆</span> Team Strength
+            </a>
+            <a href="{% url 'team_vs_team' %}" class="nav-link {% if request.resolver_match.url_name == 'team_vs_team' %}active{% endif %}" id="nav-tvt">
+                <span class="nav-icon">⚔️</span> Team vs Team
+            </a>
+            <a href="{% url 'venues' %}" class="nav-link {% if request.resolver_match.url_name == 'venues' %}active{% endif %}" id="nav-venues">
+                <span class="nav-icon">🏟️</span> Venues
+            </a>
+            <a href="{% url 'head_to_head' %}" class="nav-link {% if request.resolver_match.url_name == 'head_to_head' %}active{% endif %}" id="nav-h2h">
+                <span class="nav-icon">🎯</span> Head to Head
+            </a>
+
+            <div class="nav-section-title">Predictions</div>
+            <a href="{% url 'playing_xi' %}" class="nav-link {% if request.resolver_match.url_name == 'playing_xi' %}active{% endif %}" id="nav-xi">
+                <span class="nav-icon">📋</span> Playing XI
+            </a>
+            <a href="{% url 'prediction' %}" class="nav-link {% if request.resolver_match.url_name == 'prediction' %}active{% endif %}" id="nav-predict">
+                <span class="nav-icon">🔮</span> Match Prediction
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="breadcrumb">{% block breadcrumb %}Home{% endblock %}</div>
+            <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+        </div>
+
+        <div class="page-body">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<script src="{% static 'cricket/js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

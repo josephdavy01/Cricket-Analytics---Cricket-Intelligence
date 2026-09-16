@@ -1,0 +1,193 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}{{ player.name }} — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Players / {{ player.name }}{% endblock %}
+{% block page_title %}{{ player.name }}{% endblock %}
+
+{% block content %}
+<!-- Player Header -->
+<div class="card animate-in" style="margin-bottom: 24px;">
+    <div class="card-body" style="display: flex; gap: 32px; align-items: center; flex-wrap: wrap;">
+        <div class="player-avatar" style="width:100px; height:100px; font-size:2rem; flex-shrink:0;">
+            {% if player.image_url %}
+            <img src="{{ player.image_url }}" alt="{{ player.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'; this.parentElement.textContent='{{ player.name|truncatechars:2 }}'">
+            {% else %}
+            {{ player.name|truncatechars:2 }}
+            {% endif %}
+        </div>
+        <div style="flex:1;">
+            <h2 style="font-family:'Outfit',sans-serif; font-size:1.6rem; margin-bottom:8px;">{{ player.name }}</h2>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                <span class="badge badge-cyan">{{ player.role|default:"N/A" }}</span>
+                <span class="badge badge-purple">{{ player.team }}</span>
+            </div>
+            <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:0.85rem; color:var(--text-muted);">
+                {% if player.batting_style %}<div>🏏 {{ player.batting_style }}</div>{% endif %}
+                {% if player.bowling_style %}<div>🎯 {{ player.bowling_style }}</div>{% endif %}
+            </div>
+        </div>
+        {% if player.strike_rate or player.average or player.wickets %}
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            {% if player.average %}
+            <div style="text-align:center; padding:12px 16px; background:var(--bg-glass); border-radius:var(--radius-sm);">
+                <div style="font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:700; color:var(--accent-gold);">{{ player.average }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Average</div>
+            </div>
+            {% endif %}
+            {% if player.strike_rate %}
+            <div style="text-align:center; padding:12px 16px; background:var(--bg-glass); border-radius:var(--radius-sm);">
+                <div style="font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:700; color:var(--accent-cyan);">{{ player.strike_rate }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Strike Rate</div>
+            </div>
+            {% endif %}
+            {% if player.wickets %}
+            <div style="text-align:center; padding:12px 16px; background:var(--bg-glass); border-radius:var(--radius-sm);">
+                <div style="font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:700; color:var(--accent-purple);">{{ player.wickets }}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">Wickets</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Form Stats -->
+{% if recent_form and not recent_form.error %}
+<div class="grid-2" style="margin-bottom: 24px;">
+    <!-- Batting Form -->
+    <div class="card animate-in">
+        <div class="card-header">
+            <h3>🏏 Recent Batting Form</h3>
+            <span class="badge badge-gold">Last 5 Innings</span>
+        </div>
+        <div class="card-body">
+            <div class="stat-cards" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-gold);">{{ recent_form.total_runs_last_5_innings|default:"0" }}</div>
+                    <div class="stat-label">Runs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-cyan);">{{ recent_form.batting_strike_rate|default:"0" }}</div>
+                    <div class="stat-label">Strike Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-purple);">{{ recent_form.batting_average|default:"0" }}</div>
+                    <div class="stat-label">Average</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-green);">{{ recent_form.highest_score|default:"0" }}</div>
+                    <div class="stat-label">Highest Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bowling Form -->
+    <div class="card animate-in">
+        <div class="card-header">
+            <h3>🎯 Recent Bowling Form</h3>
+            <span class="badge badge-purple">Last 5 Matches</span>
+        </div>
+        <div class="card-body">
+            <div class="stat-cards" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-purple);">{{ recent_form.total_wickets_last_5_matches|default:"0" }}</div>
+                    <div class="stat-label">Wickets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-cyan);">{{ recent_form.bowling_economy|default:"0" }}</div>
+                    <div class="stat-label">Economy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-gold);">{{ recent_form.total_dot_balls|default:"0" }}</div>
+                    <div class="stat-label">Dot Balls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size:1.5rem; color:var(--accent-green);">{{ recent_form.most_wickets_in_a_match|default:"0" }}</div>
+                    <div class="stat-label">Best (Wickets)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Phase Stats -->
+{% if phase_stats.batting or phase_stats.bowling %}
+<div class="card animate-in" style="margin-bottom: 24px;">
+    <div class="card-header">
+        <h3>📊 Phase-wise Performance</h3>
+    </div>
+    <div class="card-body">
+        {% if phase_stats.batting %}
+        <h4 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">Batting by Phase</h4>
+        <div class="phase-grid" style="margin-bottom:24px;">
+            {% for phase in phase_stats.batting %}
+            <div class="phase-card">
+                <div class="phase-name">{{ phase.phase|default:"Unknown" }}</div>
+                <div class="phase-stat-row"><span class="label">Runs</span><span class="value">{{ phase.runs|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">Balls</span><span class="value">{{ phase.balls_faced|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">SR</span><span class="value">{{ phase.strike_rate|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">4s</span><span class="value">{{ phase.fours|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">6s</span><span class="value">{{ phase.sixes|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">Dots</span><span class="value">{{ phase.dot_balls|default:"0" }}</span></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if phase_stats.bowling %}
+        <h4 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; text-transform:uppercase; letter-spacing:1px;">Bowling by Phase</h4>
+        <div class="phase-grid">
+            {% for phase in phase_stats.bowling %}
+            <div class="phase-card">
+                <div class="phase-name">{{ phase.phase|default:"Unknown" }}</div>
+                <div class="phase-stat-row"><span class="label">Wickets</span><span class="value">{{ phase.wickets|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">Runs</span><span class="value">{{ phase.runs_conceded|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">Economy</span><span class="value">{{ phase.economy|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">Dots</span><span class="value">{{ phase.dot_balls|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">4s Given</span><span class="value">{{ phase.fours_conceded|default:"0" }}</span></div>
+                <div class="phase-stat-row"><span class="label">6s Given</span><span class="value">{{ phase.sixes_conceded|default:"0" }}</span></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Batting Position Stats -->
+{% if position_stats %}
+<div class="card animate-in">
+    <div class="card-header">
+        <h3>📍 Batting Position Stats</h3>
+    </div>
+    <div class="card-body">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Innings</th>
+                    <th>Runs</th>
+                    <th>Avg</th>
+                    <th>SR</th>
+                    <th>Highest</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pos in position_stats %}
+                <tr>
+                    <td class="highlight">#{{ pos.batting_position }}</td>
+                    <td>{{ pos.innings_played }}</td>
+                    <td class="highlight">{{ pos.total_runs }}</td>
+                    <td>{{ pos.avg_runs }}</td>
+                    <td>{{ pos.strike_rate|default:"-" }}</td>
+                    <td>{{ pos.highest_score }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Players — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Players{% endblock %}
+{% block page_title %}Players{% endblock %}
+
+{% block content %}
+<!-- Filter & Search Bar -->
+<div class="filter-bar animate-in">
+    <form method="get" id="player-search-form" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; width: 100%;">
+        <div class="form-group" style="flex: 2; min-width: 240px; margin-bottom: 0;">
+            <label>Search Player</label>
+            <input 
+                type="text" 
+                name="search" 
+                id="player-search-input" 
+                class="form-input" 
+                placeholder="🔍 Search player by name (e.g. Dhoni, Kohli)..." 
+                value="{{ search_query|default:'' }}"
+            >
+        </div>
+
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+            <label>Filter by Team</label>
+            <select name="team" class="form-select" onchange="this.form.submit()">
+                <option value="">All Teams</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if team == selected_team %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="submit" class="btn btn-primary" style="height: 44px; padding: 0 20px;">
+                🔍 Search
+            </button>
+            {% if search_query or selected_team %}
+            <a href="{% url 'players' %}" class="btn" style="height: 44px; padding: 0 16px; background: rgba(255,255,255,0.08); color: var(--text-secondary); border: 1px solid var(--border-glass);">
+                ✕ Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Player Grid -->
+<div class="grid-4" id="player-grid">
+    {% for player in players %}
+    <a href="{% url 'player_detail' player.player_id %}" class="player-card animate-in" data-name="{{ player.name|lower }}">
+        <div class="player-avatar">
+            {% if player.image_url %}
+            <img src="{{ player.image_url }}" alt="{{ player.name }}" onerror="this.style.display='none'; this.parentElement.textContent='{{ player.name|truncatechars:2 }}'">
+            {% else %}
+            {{ player.name|truncatechars:2 }}
+            {% endif %}
+        </div>
+        <div class="player-name">{{ player.name }}</div>
+        <div class="player-role">{{ player.role|default:"Unknown" }}</div>
+        <div class="player-team">{{ player.team }}</div>
+    </a>
+    {% empty %}
+    <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="empty-icon">👤</div>
+        <p>No players found matching your search criteria.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Instant Live Client-side Search Script -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('player-search-input');
+    const playerCards = document.querySelectorAll('.player-card');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            playerCards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                card.style.display = name.includes(query) ? 'block' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Playing XI — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Playing XI Suggestion{% endblock %}
+{% block page_title %}Playing XI Suggestion{% endblock %}
+
+{% block content %}
+<!-- Selector -->
+<div class="filter-bar animate-in">
+    <form method="get" style="display:flex; gap:16px; align-items:end; flex-wrap:wrap; width:100%;">
+        <div class="form-group">
+            <label>Your Team</label>
+            <select name="team" class="form-select">
+                <option value="">Select Team</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if team == selected_team %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Opponent</label>
+            <select name="opponent" class="form-select">
+                <option value="">Select Opponent</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if team == selected_opponent %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-gold">Suggest XI 📋</button>
+    </form>
+</div>
+
+{% if xi %}
+<div class="card animate-in" style="margin-bottom: 20px;">
+    <div class="card-header">
+        <h3>📋 Suggested Playing XI — {{ selected_team }}</h3>
+        <span class="badge badge-gold">vs {{ selected_opponent }}</span>
+    </div>
+    <div class="card-body">
+        <div class="xi-grid">
+            {% for player in xi %}
+            <div class="xi-player animate-in">
+                <div class="xi-rank">{{ forloop.counter }}</div>
+                <div class="xi-name">{{ player.name }}</div>
+                <div class="xi-role">{{ player.role }}</div>
+                <div class="xi-stats">
+                    <span>Runs: <strong>{{ player.recent_runs }}</strong></span>
+                    <span>Wkts: <strong>{{ player.recent_wickets }}</strong></span>
+                </div>
+                <div style="margin-top:10px;">
+                    <div class="score-bar">
+                        <div class="score-bar-fill gold" data-width="{{ player.final_selection_score }}" style="width:0%;"></div>
+                    </div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; text-align:center;">
+                        Score: {{ player.final_selection_score }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Full Table -->
+<div class="card animate-in">
+    <div class="card-header">
+        <h3>📊 Selection Breakdown</h3>
+    </div>
+    <div class="card-body" style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Player</th>
+                    <th>Role</th>
+                    <th>Recent Runs</th>
+                    <th>Recent Wickets</th>
+                    <th>Performance</th>
+                    <th>Selection Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in xi %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="highlight">{{ player.name }}</td>
+                    <td><span class="badge badge-cyan">{{ player.role }}</span></td>
+                    <td>{{ player.recent_runs }}</td>
+                    <td>{{ player.recent_wickets }}</td>
+                    <td>{{ player.performance_score }}</td>
+                    <td class="highlight">{{ player.final_selection_score }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% elif selected_team and selected_opponent %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">🔍</div>
+    <p>No Playing XI data found for this combination.</p>
+</div>
+{% else %}
+<div class="empty-state animate-in">
+    <div class="empty-icon">📋</div>
+    <p>Select your team and opponent to get a suggested Playing XI.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "cricket/base.html" %}
+
+{% block title %}Dashboard — Cricket Analytics{% endblock %}
+{% block breadcrumb %}Home / Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Overview Stats -->
+<div class="stat-cards">
+    <div class="stat-card animate-in">
+        <div class="stat-icon purple">🏏</div>
+        <div class="stat-value">{{ data.total_matches|default:"0" }}</div>
+        <div class="stat-label">Total Matches</div>
+    </div>
+    <div class="stat-card animate-in">
+        <div class="stat-icon cyan">👤</div>
+        <div class="stat-value">{{ data.total_players|default:"0" }}</div>
+        <div class="stat-label">Total Players</div>
+    </div>
+    <div class="stat-card animate-in">
+        <div class="stat-icon gold">🏆</div>
+        <div class="stat-value">{{ data.total_teams|default:"0" }}</div>
+        <div class="stat-label">Teams</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Top Run Scorers -->
+    <div class="card animate-in">
+        <div class="card-header">
+            <h3>🏏 Top Run Scorers</h3>
+            <span class="badge badge-gold">Career</span>
+        </div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>Runs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in data.top_scorers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="highlight">
+                            <a href="{% url 'player_detail' player.player_id %}">{{ player.name }}</a>
+                        </td>
+                        <td>{{ player.team }}</td>
+                        <td class="highlight">{{ player.total_runs }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No data available</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Wicket Takers -->
+    <div class="card animate-in">
+        <div class="card-header">
+            <h3>🎯 Top Wicket Takers</h3>
+            <span class="badge badge-purple">Career</span>
+        </div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>Wickets</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in data.top_wicket_takers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="highlight">
+                            <a href="{% url 'player_detail' player.player_id %}">{{ player.name }}</a>
+                        </td>
+                        <td>{{ player.team }}</td>
+                        <td class="highlight">{{ player.total_wickets }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No data available</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Team Strength Rankings -->
+<div class="card animate-in" style="margin-top: 24px;">
+    <div class="card-header">
+        <h3>🏆 Team Strength Rankings</h3>
+        <span class="badge badge-cyan">Last 5 Matches</span>
+    </div>
+    <div class="card-body">
+        {% for team in data.team_strengths %}
+        <div class="team-rank-card animate-in">
+            <div class="rank-number">{{ forloop.counter }}</div>
+            <div class="rank-info">
+                <h4>{{ team.team }}</h4>
+                <div class="score-bar">
+                    <div class="score-bar-fill" data-width="{{ team.score }}" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div class="rank-score">{{ team.score }}</div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>No team strength data available</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recent Matches -->
+<div class="card animate-in" style="margin-top: 24px;">
+    <div class="card-header">
+        <h3>📅 Recent Matches</h3>
+    </div>
+    <div class="card-body">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Match</th>
+                    <th>Venue</th>
+                    <th>Winner</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match in data.recent_matches %}
+                <tr>
+                    <td>{{ match.match_date|default:"-" }}</td>
+                    <td class="highlight">{{ match.team1 }} vs {{ match.team2 }}</td>
+                    <td>{{ match.venue|truncatewords:5 }}</td>
+                    <td>
+                        {% if match.winner %}
+                        <span class="badge badge-green">{{ match.winner }}</span>
+                        {% else %}
+                        <span class="badge badge-red">No Result</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No recent matches</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -34,9 +34,10 @@ webserver_config.py
 
 # Raw match data & scraped cache
 t20s_json/
-**/Data/
-Data/
-Cricket/
+/Cricket/Data/
+/Cricket/
+/Data/
+
 
 # ML models (Allow small project model files < 10MB for free hosting)
 *.pkl
