@@ -3,7 +3,7 @@ Database initialization and migration script.
 Reads DATABASE_URL and executes cricket_analytics.sql to set up tables and data.
 
 Handles pg_dump's COPY ... FROM stdin blocks using psycopg2's copy_expert(),
-and strips psql-only meta-commands (\restrict, \unrestrict) that psycopg2
+and strips psql-only meta-commands (\\restrict, \\unrestrict) that psycopg2
 cannot process.
 
 Usage:
