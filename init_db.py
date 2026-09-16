@@ -40,12 +40,12 @@ def run_init():
 
         print("Executing schema and views setup...")
         cur.execute(sql_script)
-        print("✅ Database schema and views initialized successfully!")
+        print("[SUCCESS] Database schema and views initialized successfully!")
 
         cur.close()
         conn.close()
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+        print(f"[ERROR] Database initialization failed: {e}")
         sys.exit(1)
 
 

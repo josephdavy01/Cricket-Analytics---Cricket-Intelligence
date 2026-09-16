@@ -39,6 +39,7 @@ CREATE TABLE players (
     bowling_4w INTEGER,
     bowling_5w INTEGER,
     bowling_10w INTEGER,
+    is_active BOOLEAN DEFAULT TRUE,
 
     UNIQUE(name, team)
 );
@@ -1999,7 +2000,7 @@ WHERE player_id IN (1436, 1431, 1636);
 
 
 
-CREATE VIEW player_selection_score AS
+CREATE VIEW player_actual_capability AS
 
 SELECT
     ap.player_id,
@@ -2055,6 +2056,16 @@ SELECT
 
     CASE
         WHEN ap.role IN (
+            'Bowler',
+            'Allrounder',
+            'Bowling Allrounder',
+            'Batting Allrounder'
+        ) THEN TRUE
+        ELSE FALSE
+    END AS genuine_bowling_option,
+
+    CASE
+        WHEN ap.role IN (
             'Opening Batter',
             'Top order Batter'
         ) THEN TRUE
@@ -2065,6 +2076,9 @@ FROM active_player_pool ap
 
 LEFT JOIN player_performance_score pps
     ON ap.player_id = pps.player_id;
+
+CREATE OR REPLACE VIEW player_selection_score AS
+SELECT * FROM player_actual_capability;
 
 
 
@@ -4900,7 +4914,7 @@ LEFT JOIN venue2 v2
 $$;
 
 
-IMAGE INSERTON
+-- IMAGE INSERTION
 
 UPDATE players
 SET image_url = CASE name
