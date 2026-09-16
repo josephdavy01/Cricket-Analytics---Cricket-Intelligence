@@ -350,6 +350,126 @@ def _flush_deliveries(cursor, conn, delivery_records):
     conn.commit()
 
 
+# --- Step 4: Post-Import Linking & Analytics ----------------------------------
+
+def post_import_analytics(cursor, conn):
+    print("\n" + "=" * 60, flush=True)
+    print("STEP 4: Linking Player IDs & Populating Match Stats...", flush=True)
+    print("=" * 60, flush=True)
+
+    print("  -> Linking batter_id in deliveries...", flush=True)
+    cursor.execute("""
+        UPDATE deliveries d
+        SET batter_id = p.player_id
+        FROM players p
+        WHERE d.batter = p.name
+          AND d.batting_team = p.team
+          AND d.batter_id IS NULL;
+    """)
+
+    print("  -> Linking non_striker_id in deliveries...", flush=True)
+    cursor.execute("""
+        UPDATE deliveries d
+        SET non_striker_id = p.player_id
+        FROM players p
+        WHERE d.non_striker = p.name
+          AND d.batting_team = p.team
+          AND d.non_striker_id IS NULL;
+    """)
+
+    print("  -> Linking bowler_id in deliveries...", flush=True)
+    cursor.execute("""
+        UPDATE deliveries d
+        SET bowler_id = p.player_id
+        FROM players p, matches m
+        WHERE d.match_id = m.match_id
+          AND d.bowler = p.name
+          AND p.team = (CASE WHEN d.batting_team = m.team1 THEN m.team2 ELSE m.team1 END)
+          AND d.bowler_id IS NULL;
+    """)
+    conn.commit()
+
+    print("  -> Populating batting_match_stats...", flush=True)
+    cursor.execute("""
+        INSERT INTO batting_match_stats (
+            match_id, innings, player_id, team,
+            runs, balls_faced, fours, sixes, dismissed, strike_rate
+        )
+        SELECT
+            d.match_id, d.innings, d.batter_id, d.batting_team,
+            SUM(d.batter_runs) AS runs,
+            COUNT(*) FILTER (WHERE d.wides = 0) AS balls_faced,
+            COUNT(*) FILTER (WHERE d.batter_runs = 4) AS fours,
+            COUNT(*) FILTER (WHERE d.batter_runs = 6) AS sixes,
+            BOOL_OR(d.player_out = d.batter) AS dismissed,
+            ROUND((SUM(d.batter_runs)::NUMERIC * 100 / NULLIF(COUNT(*) FILTER (WHERE d.wides = 0), 0)), 2) AS strike_rate
+        FROM deliveries d
+        WHERE d.batter_id IS NOT NULL
+        GROUP BY d.match_id, d.innings, d.batter_id, d.batting_team
+        ON CONFLICT (match_id, innings, player_id) DO UPDATE SET
+            team = EXCLUDED.team,
+            runs = EXCLUDED.runs,
+            balls_faced = EXCLUDED.balls_faced,
+            fours = EXCLUDED.fours,
+            sixes = EXCLUDED.sixes,
+            dismissed = EXCLUDED.dismissed,
+            strike_rate = EXCLUDED.strike_rate;
+    """)
+    conn.commit()
+
+    print("  -> Populating bowling_match_stats...", flush=True)
+    cursor.execute("""
+        WITH bowling_data AS (
+            SELECT
+                d.match_id, d.innings, d.bowler_id,
+                CASE WHEN d.batting_team = m.team1 THEN m.team2 ELSE m.team1 END AS bowling_team,
+                COUNT(*) FILTER (WHERE d.wides = 0 AND d.no_balls = 0) AS balls_bowled,
+                SUM(d.total_runs - d.byes - d.leg_byes) AS runs_conceded,
+                COUNT(*) FILTER (WHERE d.is_wicket = TRUE AND d.dismissal_type NOT IN ('run out','retired hurt','retired out','obstructing the field')) AS wickets,
+                COUNT(*) FILTER (WHERE d.total_runs = 0) AS dot_balls
+            FROM deliveries d
+            JOIN matches m ON d.match_id = m.match_id
+            WHERE d.bowler_id IS NOT NULL
+            GROUP BY d.match_id, d.innings, d.bowler_id, bowling_team
+        )
+        INSERT INTO bowling_match_stats (
+            match_id, innings, player_id, team,
+            balls_bowled, runs_conceded, wickets, dot_balls, economy
+        )
+        SELECT
+            match_id, innings, bowler_id, bowling_team,
+            balls_bowled, runs_conceded, wickets, dot_balls,
+            ROUND(runs_conceded::NUMERIC * 6 / NULLIF(balls_bowled, 0), 2) AS economy
+        FROM bowling_data
+        ON CONFLICT (match_id, innings, player_id) DO UPDATE SET
+            team = EXCLUDED.team,
+            balls_bowled = EXCLUDED.balls_bowled,
+            runs_conceded = EXCLUDED.runs_conceded,
+            wickets = EXCLUDED.wickets,
+            dot_balls = EXCLUDED.dot_balls,
+            economy = EXCLUDED.economy;
+    """)
+    conn.commit()
+
+    print("  -> Creating/updating team_strength_score view...", flush=True)
+    cursor.execute("""
+        CREATE OR REPLACE VIEW team_strength_score AS
+        SELECT
+            team,
+            ROUND(
+                (
+                    COALESCE(avg_score_last_5_matches, 140) * 0.4
+                    + COALESCE(wickets_last_5_matches, 0) * 5
+                    + GREATEST(0, (12 - COALESCE(economy_last_5_matches, 9))) * 5
+                )::NUMERIC,
+                2
+            ) AS team_strength_score
+        FROM team_recent_strength;
+    """)
+    conn.commit()
+    print("  -> Analytics tables and views synchronized successfully.", flush=True)
+
+
 # --- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -367,9 +487,10 @@ if __name__ == "__main__":
         import_players(cursor, conn)
         import_matches(cursor, conn)
         import_deliveries(cursor, conn)
+        post_import_analytics(cursor, conn)
 
         print("\n" + "=" * 60, flush=True)
-        print("ALL DATA IMPORTED SUCCESSFULLY TO POSTGRESQL!", flush=True)
+        print("ALL DATA IMPORTED & ANALYTICS POPULATED SUCCESSFULLY!", flush=True)
         print("=" * 60, flush=True)
 
     except Exception as e:
@@ -381,3 +502,4 @@ if __name__ == "__main__":
         cursor.close()
         conn.close()
         print("Database connection closed.", flush=True)
+
