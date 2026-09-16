@@ -15,14 +15,14 @@ if not (API_BASE.startswith('http://') or API_BASE.startswith('https://')):
 def _get(endpoint: str, params: dict = None) -> dict | list:
     """Synchronous GET request to FastAPI backend."""
     try:
-        resp = httpx.get(f"{API_BASE}{endpoint}", params=params, timeout=15.0)
+        resp = httpx.get(f"{API_BASE}{endpoint}", params=params, timeout=30.0)
         resp.raise_for_status()
         return resp.json()
     except httpx.HTTPError as e:
-        print(f"API Error: {e}")
+        print(f"API Error at {API_BASE}{endpoint}: {e}")
         return {}
     except Exception as e:
-        print(f"Connection Error: {e}")
+        print(f"Connection Error at {API_BASE}{endpoint}: {e}")
         return {}
 
 
