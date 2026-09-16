@@ -20,7 +20,9 @@ DATABASE_URL = os.getenv(
 if "+asyncpg" in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.replace("+asyncpg", "")
 
-SQL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.sql")
+SQL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cricket_analytics.sql")
+if not os.path.exists(SQL_FILE):
+    SQL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.sql")
 
 
 def run_init():
