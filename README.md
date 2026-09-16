@@ -320,6 +320,36 @@ Web Application UI: [http://localhost:8001](http://localhost:8001)
 
 ---
 
+## 🚀 Deploy to Render (render.com)
+
+This project is pre-configured for **one-click Blueprint deployment** on [Render](https://render.com/).
+
+### Automated Blueprint Deployment (Recommended)
+
+1. **Fork or Push** this repository to your GitHub account.
+2. Log in to your [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** and select **Blueprint**.
+4. Connect your GitHub repository (`Cricket-Analytics---Cricket-Intelligence`).
+5. Render will automatically detect [`render.yaml`](render.yaml) and provision:
+   - 🐘 **PostgreSQL Database** (`cricket-postgres-db`)
+   - ⚡ **FastAPI Web Service** (`cricket-analytics-api`)
+   - 🌐 **Django Frontend Web Service** (`cricket-analytics-web`)
+6. Click **Apply**.
+
+### Initializing Database on Render
+
+Once the database is deployed on Render, copy its **External Database URL** from the database settings, and initialize the schema from your terminal:
+
+```bash
+# Set the remote Render DB URL
+export DATABASE_URL="postgresql://user:password@host/dbname"
+
+# Run the initializer script
+python init_db.py
+```
+
+---
+
 ## 🌪️ Airflow Orchestration
 
 For fully automated, containerized pipeline execution:
@@ -350,4 +380,6 @@ Contributions, issues, and feature requests are welcome!
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
 

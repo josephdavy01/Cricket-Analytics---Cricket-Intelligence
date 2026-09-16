@@ -14,18 +14,33 @@ from database import get_db
 
 router = APIRouter()
 
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "t20i_prediction_model.joblib")
 _model_pkg = None
 
 
 def get_ml_model():
     global _model_pkg
-    if _model_pkg is None and os.path.exists(MODEL_PATH):
-        try:
-            _model_pkg = joblib.load(MODEL_PATH)
-        except Exception as e:
-            print(f"Failed to load ML model package: {e}")
-    return _model_pkg
+    if _model_pkg is not None:
+        return _model_pkg
+
+    candidate_paths = [
+        os.getenv("MODEL_PATH", ""),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "t20i_prediction_model.joblib"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "t20i_prediction_model.joblib"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "ipl_match_model.joblib"),
+        os.path.join(os.getcwd(), "t20i_prediction_model.joblib"),
+        os.path.join(os.getcwd(), "backend", "ipl_match_model.joblib"),
+    ]
+
+    for p in candidate_paths:
+        if p and os.path.exists(p):
+            try:
+                _model_pkg = joblib.load(p)
+                print(f"Loaded ML model from: {p}")
+                return _model_pkg
+            except Exception as e:
+                print(f"Failed to load ML model package from {p}: {e}")
+
+    return None
 
 
 def _convert(v):

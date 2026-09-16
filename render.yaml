@@ -1,0 +1,60 @@
+# Render Blueprint configuration for Cricket Analytics & Intelligence Platform
+# Documentation: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: cricket-postgres-db
+    databaseName: t20i_cricket_analytics
+    user: postgres
+    plan: free
+    region: oregon
+    ipAllowList: [] # Allow all internal connections
+
+services:
+  # ----------------------------------------------------
+  # 1. FastAPI Backend REST API
+  # ----------------------------------------------------
+  - type: web
+    name: cricket-analytics-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cricket-postgres-db
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: PYTHON_VERSION
+        value: 3.10.12
+
+  # ----------------------------------------------------
+  # 2. Django Frontend Web Application
+  # ----------------------------------------------------
+  - type: web
+    name: cricket-analytics-web
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: gunicorn ipl_frontend.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: FASTAPI_BASE_URL
+        fromService:
+          type: web
+          name: cricket-analytics-api
+          property: host
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: PYTHON_VERSION
+        value: 3.10.12
