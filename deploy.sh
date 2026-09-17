@@ -17,13 +17,15 @@ else
     echo "Swapfile already exists."
 fi
 
-echo "=== 2. Installing System Packages & Compilers ==="
+echo "=== 2. Installing System Packages & Python 3.12 ==="
+sudo apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa -y || true
 sudo apt-get update -y
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3-pip \
-    python3-venv \
-    python3-dev \
-    build-essential \
+    python3.12 \
+    python3.12-venv \
+    python3.12-dev \
     libpq-dev \
     postgresql \
     postgresql-contrib \
@@ -49,12 +51,12 @@ sudo chown -R ubuntu:ubuntu /home/ubuntu/cricket
 echo "=== 5. Importing Database Dump ==="
 PGPASSWORD='CricketPass2026!' psql -U cricket_admin -d t20i_cricket_analytics -h localhost -f /home/ubuntu/cricket/cricket_analytics.sql || true
 
-echo "=== 6. Setting up FastAPI Backend ==="
+echo "=== 6. Setting up FastAPI Backend with Python 3.12 ==="
 cd /home/ubuntu/cricket/backend
 rm -rf venv
-python3 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip
 pip install -r requirements.txt psycopg2-binary
 deactivate
 
@@ -75,12 +77,12 @@ Restart=always
 WantedBy=multi-user.target
 SERVICE
 
-echo "=== 7. Setting up Django Frontend ==="
+echo "=== 7. Setting up Django Frontend with Python 3.12 ==="
 cd /home/ubuntu/cricket/frontend
 rm -rf venv
-python3 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip
 pip install -r requirements.txt
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
