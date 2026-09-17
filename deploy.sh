@@ -17,9 +17,18 @@ else
     echo "Swapfile already exists."
 fi
 
-echo "=== 2. Installing System Packages ==="
+echo "=== 2. Installing System Packages & Compilers ==="
 sudo apt-get update -y
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pip python3-venv postgresql postgresql-contrib nginx git
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    build-essential \
+    libpq-dev \
+    postgresql \
+    postgresql-contrib \
+    nginx \
+    git
 
 echo "=== 3. Configuring PostgreSQL ==="
 sudo systemctl start postgresql
@@ -29,19 +38,23 @@ sudo -u postgres psql -c "CREATE USER cricket_admin WITH ENCRYPTED PASSWORD 'Cri
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE t20i_cricket_analytics TO cricket_admin;"
 sudo -u postgres psql -c "ALTER DATABASE t20i_cricket_analytics OWNER TO cricket_admin;"
 
-echo "=== 4. Cloning Codebase ==="
-sudo rm -rf /home/ubuntu/cricket
-git clone https://github.com/josephdavy01/Cricket-Analytics---Cricket-Intelligence.git /home/ubuntu/cricket
+echo "=== 4. Cloning/Updating Codebase ==="
+if [ -d "/home/ubuntu/cricket" ]; then
+    cd /home/ubuntu/cricket && git pull origin main || true
+else
+    git clone https://github.com/josephdavy01/Cricket-Analytics---Cricket-Intelligence.git /home/ubuntu/cricket
+fi
 sudo chown -R ubuntu:ubuntu /home/ubuntu/cricket
 
 echo "=== 5. Importing Database Dump ==="
-PGPASSWORD='CricketPass2026!' psql -U cricket_admin -d t20i_cricket_analytics -h localhost -f /home/ubuntu/cricket/cricket_analytics.sql
+PGPASSWORD='CricketPass2026!' psql -U cricket_admin -d t20i_cricket_analytics -h localhost -f /home/ubuntu/cricket/cricket_analytics.sql || true
 
 echo "=== 6. Setting up FastAPI Backend ==="
 cd /home/ubuntu/cricket/backend
+rm -rf venv
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt psycopg2-binary
 deactivate
 
@@ -64,9 +77,10 @@ SERVICE
 
 echo "=== 7. Setting up Django Frontend ==="
 cd /home/ubuntu/cricket/frontend
+rm -rf venv
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
