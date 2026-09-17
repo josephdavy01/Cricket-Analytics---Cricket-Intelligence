@@ -17,20 +17,14 @@ else
     echo "Swapfile already exists."
 fi
 
-echo "=== 2. Installing System Packages & Python 3.12 ==="
-sudo apt-get update -y
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common
-sudo add-apt-repository ppa:deadsnakes/ppa -y || true
+echo "=== 2. Installing System Packages ==="
 sudo apt-get update -y
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3.12 \
-    python3.12-venv \
-    python3.12-dev \
-    libpq-dev \
     postgresql \
     postgresql-contrib \
     nginx \
-    git
+    git \
+    curl
 
 echo "=== 3. Configuring PostgreSQL ==="
 sudo systemctl start postgresql
@@ -51,13 +45,17 @@ sudo chown -R ubuntu:ubuntu /home/ubuntu/cricket
 echo "=== 5. Importing Database Dump ==="
 PGPASSWORD='CricketPass2026!' psql -U cricket_admin -d t20i_cricket_analytics -h localhost -f /home/ubuntu/cricket/cricket_analytics.sql || true
 
-echo "=== 6. Setting up FastAPI Backend with Python 3.12 ==="
+echo "=== 6. Installing Standalone Python 3.11 via uv ==="
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv python install 3.11
+
+echo "=== 7. Setting up FastAPI Backend with Python 3.11 ==="
 cd /home/ubuntu/cricket/backend
 rm -rf venv
-python3.12 -m venv venv
+uv venv venv --python 3.11
 source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt psycopg2-binary
+uv pip install -r requirements.txt psycopg2-binary
 deactivate
 
 sudo tee /etc/systemd/system/fastapi.service > /dev/null << 'SERVICE'
@@ -77,13 +75,12 @@ Restart=always
 WantedBy=multi-user.target
 SERVICE
 
-echo "=== 7. Setting up Django Frontend with Python 3.12 ==="
+echo "=== 8. Setting up Django Frontend with Python 3.11 ==="
 cd /home/ubuntu/cricket/frontend
 rm -rf venv
-python3.12 -m venv venv
+uv venv venv --python 3.11
 source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
 deactivate
@@ -108,7 +105,7 @@ Restart=always
 WantedBy=multi-user.target
 SERVICE
 
-echo "=== 8. Configuring Nginx ==="
+echo "=== 9. Configuring Nginx ==="
 sudo tee /etc/nginx/sites-available/cricket > /dev/null << 'NGINX'
 server {
     listen 80 default_server;
@@ -141,7 +138,7 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/cricket /etc/nginx/sites-enabled/
 sudo nginx -t
 
-echo "=== 9. Starting and Enabling Services ==="
+echo "=== 10. Starting and Enabling Services ==="
 sudo systemctl daemon-reload
 sudo systemctl enable fastapi django nginx
 sudo systemctl restart fastapi django nginx
