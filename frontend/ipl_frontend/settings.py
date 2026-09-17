@@ -112,6 +112,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8001',
     'http://127.0.0.1:8001',
     'https://*.onrender.com',
+    'https://*.sslip.io',
+    'https://13-61-17-56.sslip.io',
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
